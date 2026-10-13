@@ -55,7 +55,9 @@ let database = listD1Databases().find((db) => db.name === databaseName);
 if (database) {
   console.log(`\nD1「${databaseName}」は作成済みです（${database.uuid}）。そのまま使います。`);
 } else {
-  wrangler(["d1", "create", databaseName]);
+  // wrangler.jsonc はこのスクリプトで書き換えるため、wrangler には設定を変更させない
+  // （ローカル開発ではリモートではなくローカルの D1 を使う）
+  wrangler(["d1", "create", databaseName, "--location", "apac", "--update-config=false", "--use-remote=false"]);
   database = listD1Databases().find((db) => db.name === databaseName);
   if (!database) fail(`D1「${databaseName}」の作成を確認できませんでした。`);
 }

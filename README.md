@@ -14,8 +14,8 @@ Cloudflare Workers + D1 + Hono + Cloudflare Access で構成している。ロ�
 | [Docker Desktop](https://www.docker.com/products/docker-desktop/)                                     | Windows では WSL2 バックエンドを使う（「5. Windows 向けの注意事項」）             |
 | [VS Code](https://code.visualstudio.com/) + [Dev Containers 拡張](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers) | Dev Containers を使わない場合は不要（`docker compose` だけでも開発できる）        |
 | 自分の Cloudflare アカウント（無料プラン）と Zero Trust | [cloudflare-setup.md「1. アカウントの準備」](docs/cloudflare-setup.md#1-アカウントの準備) |
-| 自分の API トークンとアカウント ID                                                                    | [cloudflare-setup.md「1-3」「1-4」](docs/cloudflare-setup.md#1-3-api-トークンを発行する) |
-| Access のチームドメインと AUD タグ | 手順 8 で自分の Zero Trust から取得する |
+| 自分の API トークン（**D1 の Edit 権限を追加したもの**）とアカウント ID | [cloudflare-setup.md「1-3」「1-4」](docs/cloudflare-setup.md#1-3-api-トークンを発行する) |
+| Access のチームドメインと AUD タグ | 手順 9 で自分の Zero Trust から取得する |
 
 ## 2. clone から本番 URL での動作確認まで
 
@@ -41,23 +41,31 @@ Cloudflare Workers + D1 + Hono + Cloudflare Access で構成している。ロ�
    ```
 
 4. `code .` で VS Code を開き、コマンドパレットから **Dev Containers: Reopen in Container** を実行する。初回はイメージのビルドと `npm ci`、ローカル D1 へのマイグレーション適用が自動で行われる。
-5. VS Code のターミナル（コンテナ内）で、自分の Worker と D1 を作成する。Worker 名と D1 名を聞かれる（名前は自由。小文字英数字とハイフン、D1 名は Enter で `<Worker 名>-db`）。
+5. 開発サーバーを起動し、ブラウザで <http://localhost:8787> を開く。右上にダミーユーザー（`dev-user@example.com`）が表示される。
+
+   ```sh
+   npm run dev
+   ```
+
+6. アイテムを登録・削除できること、`src/` のファイルを保存すると自動でリロードされることを確認する。必要ならダミーデータを入れる: `npm run db:seed:local`
+7. VS Code のターミナル（コンテナ内）で、自分の Worker と D1 を作成する。Worker 名と D1 名を聞かれる（名前は自由。小文字英数字とハイフン、D1 名は Enter で `<Worker 名>-db`）。マイグレーションの確認が出たら `y`。
 
    ```sh
    npm run setup
    # 対話なしの場合: npm run setup -- --name call-memo-book
    ```
 
-   Worker 名・D1 名・`database_id` が `wrangler.jsonc` に書き込まれる。Worker の URL は `https://<Worker 名>.<サブドメイン>.workers.dev` になる。
+   Worker 名・D1 名・`database_id` が `wrangler.jsonc` に書き込まれる。`database_id` が変わるので、ローカルのデータは空になる（必要なら `npm run db:seed:local`）。
 
-6. 開発サーバーを起動し、ブラウザで <http://localhost:8787> を開く。右上にダミーユーザー（`dev-user@example.com`）が表示される。
+8. デプロイする。リモート D1 にマイグレーションが適用されてから Worker がデプロイされる（確認が出たら `y`）。
 
    ```sh
-   npm run dev
+   npm run deploy
    ```
 
-7. アイテムを登録・削除できること、`src/` のファイルを保存すると自動でリロードされることを確認する。必要ならダミーデータを入れる: `npm run db:seed:local`
-8. Zero Trust で自分の Worker 用の Access アプリケーションを作成し（[cloudflare-setup.md「3. Access でアプリを保護してデプロイする」](docs/cloudflare-setup.md#3-access-でアプリを保護してデプロイする)）、チームドメインと AUD タグを `wrangler.jsonc` の `vars` に入れる。**空のままデプロイすると、すべてのリクエストが 500 で拒否される**（フェイルクローズ）。
+   表示された `https://<Worker 名>.<サブドメイン>.workers.dev` を開くと、**500「Server misconfiguration」になる。これが正常**（Access の値が空のうちは、すべてのリクエストを拒否する）。
+
+9. Zero Trust で自分の Worker 用の Access アプリケーションを作成し、チームドメインと AUD タグを `wrangler.jsonc` の `vars` に入れる（[cloudflare-setup.md「4. Access で保護して再デプロイする」](docs/cloudflare-setup.md#4-access-で保護して再デプロイする)）。
 
    ```jsonc
    "vars": {
@@ -67,25 +75,22 @@ Cloudflare Workers + D1 + Hono + Cloudflare Access で構成している。ロ�
    }
    ```
 
-9. デプロイする。リモート D1 にマイグレーションが適用されてから Worker がデプロイされる。
-
-   ```sh
-   npm run deploy
-   ```
-
-10. 表示された `https://<Worker 名>.<サブドメイン>.workers.dev` を開く。Access のログイン画面でワンタイム PIN（または Google）でログインし、右上に自分のメールアドレスが表示されれば完了。
+10. もう一度 `npm run deploy` を実行し、URL を開く。Access のログイン画面でログインし、右上に自分のメールアドレスが表示されれば完了。
 
 ### Dev Containers を使わない場合
 
-手順 1〜3 は同じ。その後は次のように操作する。
+手順 1〜3 は同じ。その後は次のように操作する（手順の内容は上と同じ）。
 
 ```sh
 docker compose up            # 依存のインストール → ローカル D1 マイグレーション → 開発サーバー起動
-                             # http://localhost:8787 で確認できる
+                             # http://localhost:8787 で確認できる。npm run dev は不要（自動で動いている）
 # 別のターミナルで
+docker compose exec app npx wrangler whoami   # .env の認証情報が効いているか確認
 docker compose exec app npm run setup
 docker compose exec app npm run deploy
 ```
+
+`.env` を後から作成・変更した場合は、`docker compose up -d --force-recreate` でコンテナを作り直す（`.env` は起動時にしか読まれない）。
 
 > Dev Containers と `docker compose up` は同じコンテナ・ボリュームを使うので、同時には起動しないこと（ポート 8787 が競合する）。
 
@@ -161,15 +166,17 @@ docker compose exec app npm run deploy
 | 症状                                                                       | 対処                                                                                                                                                         |
 | -------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `環境変数 CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID が設定されていません` | `.env` に値を入れ、コンテナを作り直す（Dev Containers: **Rebuild Container**、compose: `docker compose up -d --force-recreate`）。`.env` は起動時にしか読まれない |
-| `Authentication error` などで `setup` / `deploy` が失敗する                | API トークンの権限（Workers・D1 の編集）と対象アカウントを確認する。[cloudflare-setup.md「1-3」](docs/cloudflare-setup.md#1-3-api-トークンを発行する)                              |
+| `Authentication error [code: 10000]` などで `setup` / `deploy` が失敗する | API トークンに **Account → D1 → Edit** があるか（テンプレート「Edit Cloudflare Workers」には含まれない）と、対象アカウントを確認する。[cloudflare-setup.md「1-3」](docs/cloudflare-setup.md#1-3-api-トークンを発行する)                              |
 | ローカルで `Server misconfiguration`（500）になる                          | `.dev.vars` がない、または `ENVIRONMENT=local` になっていない。`localhost:8787` 以外（IP アドレスなど）でアクセスしていないかも確認する                       |
 | デプロイ先で `Server misconfiguration`（500）になる                        | `wrangler.jsonc` の `ACCESS_TEAM_DOMAIN` / `ACCESS_AUD` が空。値を入れて再デプロイする                                                                        |
-| デプロイ先で `Forbidden`（403）になる                                      | Access を経由していない、または AUD タグ・チームドメインが違う。Zero Trust の Access アプリケーションの公開ホスト名と AUD タグを確認する                                                                              |
+| デプロイ先で `Forbidden`（403）になる                                      | Access を経由していない、または AUD タグ・チームドメインが違う。Zero Trust の Access アプリケーションの公開ホスト名と AUD タグを確認する。`npx wrangler tail` で理由（`unexpected "aud"` など）が見られる                                                                              |
 | Access のログイン後に「アクセス権がない」と表示される | Access アプリケーションのポリシーに、ログインしたメールアドレスが含まれているか確認する |
 | `npm run setup` の後、ローカルのデータが消えた                             | ローカル D1 は `database_id` ごとに保存されるため。`npm run db:migrate:local` と `npm run db:seed:local` を実行する                                           |
 | ソースを変更してもリロードされない                                         | 「5. Windows 向けの注意事項」を参照                                                                                                                          |
 | `port is already allocated`（8787）                                         | Dev Container と `docker compose up` を同時に起動していないか、他のプロセスが 8787 を使っていないか確認する                                                  |
+| `npm run dev` で `bind(): Address already in use`                          | `docker compose up` で起動した場合は開発サーバーが自動で動いているので、`npm run dev` は不要。ログは `docker compose logs -f app` で見る                      |
 | `package.json` を変えたのに反映されない                                    | コンテナを再起動する（起動時に `package-lock.json` の変更を検知して `npm ci` する）。手動なら `node scripts/ensure-deps.ts`                                  |
+| `wrangler.jsonc` に `call_memo_book_db` のような D1 設定が増えた | `wrangler d1 create` の質問「設定に追加する」に Yes と答えたため（`npm run setup` では聞かれない）。`binding` が `DB` のもの以外を削除する |
 | `Docker Desktop is unable to start`                                        | Docker Desktop を再起動する（`docker desktop restart`）                                                                                                      |
 | ローカル D1 を作り直したい                                                 | `docker compose down -v` でボリュームごと削除する（node_modules も消える）                                                                                  |
 
