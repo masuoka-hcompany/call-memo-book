@@ -1,9 +1,9 @@
 // npm run setup
-// 氏名とアプリ名から <氏名>-<アプリ名>（Worker）と <氏名>-<アプリ名>-db（D1）を決め、
+// Worker 名と D1 名（省略時は <Worker 名>-db）を受け取り、
 // D1 を作成して wrangler.jsonc に書き込む。ローカル D1 にマイグレーションも適用する。
 //
 // 対話入力:       npm run setup
-// 引数で指定:     npm run setup -- --name masuoka --app todo
+// 引数で指定:     npm run setup -- --name call-memo-book [--db call-memo-book-db]
 // 何度実行しても壊れない（作成済みの D1 はそのまま使う）。
 
 import {
@@ -22,11 +22,12 @@ import {
   wrangler,
 } from "./lib.ts";
 
-async function askName(label: string, argName: string, example: string): Promise<string> {
-  const value = getArg(argName) ?? (await prompt(`${label}（例: ${example}）: `));
+async function askName(label: string, argName: string, defaultValue?: string): Promise<string> {
+  const hint = defaultValue ? `（Enter で ${defaultValue}）` : "";
+  const value = getArg(argName) ?? ((await prompt(`${label}${hint}: `)) || defaultValue || "");
   if (!NAME_PATTERN.test(value)) {
     fail(
-      `${label}「${value}」は使えません。小文字英数字とハイフンのみ（先頭・末尾・連続ハイフン不可）で入力してください。`,
+      `${label}「${value}」は使えません。小文字英数字とハイフンのみ（先頭・末尾・連続ハイフン不可、63文字以内）で入力してください。`,
     );
   }
   return value;
@@ -34,10 +35,8 @@ async function askName(label: string, argName: string, example: string): Promise
 
 requireCloudflareEnv();
 
-const person = await askName("氏名（ローマ字）", "name", "masuoka");
-const app = await askName("アプリ名", "app", "todo");
-const workerName = `${person}-${app}`;
-const databaseName = `${workerName}-db`;
+const workerName = await askName("Worker 名", "name");
+const databaseName = await askName("D1 名", "db", `${workerName}-db`);
 
 console.log(`\nWorker: ${workerName}\nD1    : ${databaseName}`);
 

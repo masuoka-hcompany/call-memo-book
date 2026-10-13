@@ -9,13 +9,13 @@ export const WRANGLER_CONFIG = "wrangler.jsonc";
 export const DB_BINDING = "DB";
 
 export const PLACEHOLDERS = {
-  workerName: "yourname-appname",
-  databaseName: "yourname-appname-db",
+  workerName: "your-worker-name",
+  databaseName: "your-worker-name-db",
   databaseId: "00000000-0000-0000-0000-000000000000",
 } as const;
 
-// 氏名・アプリ名: 小文字英数字とハイフン（先頭・末尾・連続ハイフン不可）
-export const NAME_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+// Worker 名・D1 名: 小文字英数字とハイフン（先頭・末尾・連続ハイフン不可）。workers.dev のホスト名に使うため63文字以内
+export const NAME_PATTERN = /^(?=.{1,63}$)[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
 export type WranglerConfig = {
   name: string;
@@ -79,7 +79,11 @@ export function wranglerOutput(args: string[]): string {
 export type D1Database = { uuid: string; name: string };
 
 export function listD1Databases(): D1Database[] {
-  return JSON.parse(wranglerOutput(["d1", "list", "--json"])) as D1Database[];
+  try {
+    return JSON.parse(wranglerOutput(["d1", "list", "--json"])) as D1Database[];
+  } catch {
+    fail("D1 の一覧を取得できませんでした。.env の API トークン（権限）とアカウント ID を確認してください。");
+  }
 }
 
 // `--name foo` 形式のコマンドライン引数を読む

@@ -3,17 +3,18 @@
 //
 // - account_id はここに書かず、環境変数 CLOUDFLARE_ACCOUNT_ID で指定する。
 // - name / d1_databases の database_name・database_id は `npm run setup` が書き込む。
-//   （yourname-appname / 0000... はプレースホルダ。ローカル開発はこのままでも動く）
+//   （your-worker-name / 0000... はプレースホルダ。ローカル開発はこのままでも動く）
 {
   "$schema": "./node_modules/wrangler/config-schema.json",
-  "name": "yourname-appname",
+  "name": "your-worker-name",
   "main": "src/index.tsx",
   "compatibility_date": "2026-10-13",
   "compatibility_flags": ["nodejs_compat"],
 
-  // 勉強会中は workers.dev で公開する（管理者が Access で保護済み）
+  // 勉強会中は workers.dev で公開し、Access アプリケーションで保護する（docs/cloudflare-setup.md）
   "workers_dev": true,
-  "preview_urls": true,
+  // プレビュー URL は Access アプリケーションの対象外になるため無効にする
+  "preview_urls": false,
 
   "observability": {
     "enabled": true
@@ -22,7 +23,7 @@
   "d1_databases": [
     {
       "binding": "DB",
-      "database_name": "yourname-appname-db",
+      "database_name": "your-worker-name-db",
       "database_id": "00000000-0000-0000-0000-000000000000",
       "migrations_dir": "migrations"
     }

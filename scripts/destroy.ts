@@ -34,11 +34,6 @@ console.log(`
 const answer = await prompt(`削除する場合は Worker 名「${workerName}」を入力してください: `);
 if (answer !== workerName) fail("入力が一致しないため中止しました。");
 
-// 他人のリソースを消さないよう、名前が <Worker名>-db の D1 だけを削除する
-if (databaseName !== `${workerName}-db`) {
-  fail(`D1 名「${databaseName}」が命名規則（${workerName}-db）と一致しないため中止しました。`);
-}
-
 wrangler(["delete", "--name", workerName, "--force"]);
 
 if (listD1Databases().some((db) => db.name === databaseName)) {

@@ -5,6 +5,7 @@
 Cloudflare Workers + D1 + Hono + Cloudflare Access で構成している。ローカル開発は Docker（VS Code Dev Containers 推奨）で行い、ホストに Node.js を入れる必要はない。
 
 - アカウント運用方針: [docs/account-policy.md](docs/account-policy.md)（必ず先に読むこと）
+- Cloudflare 側の設定手順（自分のアカウント・Access・Google ログイン）: [docs/cloudflare-setup.md](docs/cloudflare-setup.md)
 
 ## 1. 前提
 
@@ -12,9 +13,9 @@ Cloudflare Workers + D1 + Hono + Cloudflare Access で構成している。ロ�
 | ----------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
 | [Docker Desktop](https://www.docker.com/products/docker-desktop/)                                     | Windows では WSL2 バックエンドを使う（「5. Windows 向けの注意事項」）             |
 | [VS Code](https://code.visualstudio.com/) + [Dev Containers 拡張](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers) | Dev Containers を使わない場合は不要（`docker compose` だけでも開発できる）        |
-| 会社の Cloudflare アカウントへの招待の承認                                                            | [account-policy.md「3. メンバーと権限」](docs/account-policy.md#3-メンバーと権限) |
-| 自分の API トークンとアカウント ID                                                                    | [account-policy.md「5. API トークン」](docs/account-policy.md#5-api-トークン)     |
-| Access のチームドメインと AUD タグ                                                                    | 管理者から受け取る（デプロイ時に使う）                                            |
+| 自分の Cloudflare アカウント（無料プラン）と Zero Trust | [cloudflare-setup.md「1. アカウントの準備」](docs/cloudflare-setup.md#1-アカウントの準備) |
+| 自分の API トークンとアカウント ID                                                                    | [cloudflare-setup.md「1-3」「1-4」](docs/cloudflare-setup.md#1-3-api-トークンを発行する) |
+| Access のチームドメインと AUD タグ | 手順 8 で自分の Zero Trust から取得する |
 
 ## 2. clone から本番 URL での動作確認まで
 
@@ -40,14 +41,14 @@ Cloudflare Workers + D1 + Hono + Cloudflare Access で構成している。ロ�
    ```
 
 4. `code .` で VS Code を開き、コマンドパレットから **Dev Containers: Reopen in Container** を実行する。初回はイメージのビルドと `npm ci`、ローカル D1 へのマイグレーション適用が自動で行われる。
-5. VS Code のターミナル（コンテナ内）で、自分の Worker と D1 を作成する。氏名とアプリ名を聞かれる（小文字英数字とハイフン）。
+5. VS Code のターミナル（コンテナ内）で、自分の Worker と D1 を作成する。Worker 名と D1 名を聞かれる（名前は自由。小文字英数字とハイフン、D1 名は Enter で `<Worker 名>-db`）。
 
    ```sh
    npm run setup
-   # 対話なしの場合: npm run setup -- --name masuoka --app call-memo
+   # 対話なしの場合: npm run setup -- --name call-memo-book
    ```
 
-   `<氏名>-<アプリ名>` の Worker 名と `<氏名>-<アプリ名>-db` の D1 名、`database_id` が `wrangler.jsonc` に書き込まれる。
+   Worker 名・D1 名・`database_id` が `wrangler.jsonc` に書き込まれる。Worker の URL は `https://<Worker 名>.<サブドメイン>.workers.dev` になる。
 
 6. 開発サーバーを起動し、ブラウザで <http://localhost:8787> を開く。右上にダミーユーザー（`dev-user@example.com`）が表示される。
 
@@ -56,7 +57,7 @@ Cloudflare Workers + D1 + Hono + Cloudflare Access で構成している。ロ�
    ```
 
 7. アイテムを登録・削除できること、`src/` のファイルを保存すると自動でリロードされることを確認する。必要ならダミーデータを入れる: `npm run db:seed:local`
-8. `wrangler.jsonc` の `vars` に、管理者から受け取った Access の値を入れる。**空のままデプロイすると、すべてのリクエストが 500 で拒否される**（フェイルクローズ）。
+8. Zero Trust で自分の Worker 用の Access アプリケーションを作成し（[cloudflare-setup.md「3. Access でアプリを保護してデプロイする」](docs/cloudflare-setup.md#3-access-でアプリを保護してデプロイする)）、チームドメインと AUD タグを `wrangler.jsonc` の `vars` に入れる。**空のままデプロイすると、すべてのリクエストが 500 で拒否される**（フェイルクローズ）。
 
    ```jsonc
    "vars": {
@@ -72,7 +73,7 @@ Cloudflare Workers + D1 + Hono + Cloudflare Access で構成している。ロ�
    npm run deploy
    ```
 
-10. 表示された `https://<Worker 名>.<サブドメイン>.workers.dev` を開く。Access のログイン画面で会社の Google アカウントでログインし、右上に自分のメールアドレスが表示されれば完了。
+10. 表示された `https://<Worker 名>.<サブドメイン>.workers.dev` を開く。Access のログイン画面でワンタイム PIN（または Google）でログインし、右上に自分のメールアドレスが表示されれば完了。
 
 ### Dev Containers を使わない場合
 
@@ -112,7 +113,9 @@ docker compose exec app npm run deploy
 .
 ├── .devcontainer/           VS Code Dev Containers の設定（compose.yaml を使う）
 ├── .github/workflows/       CI（PR 時の型チェック・テスト）とデプロイ（main への push 時）。勉強会では使わない
-├── docs/account-policy.md   Cloudflare アカウント運用方針
+├── docs/
+│   ├── account-policy.md    Cloudflare アカウント運用方針
+│   └── cloudflare-setup.md  Cloudflare 側の設定手順（アカウント・Access・ログイン方法）
 ├── migrations/              D1 のマイグレーション（スキーマはここで管理する）
 ├── scripts/                 setup / deploy / destroy などの Node.js スクリプト
 ├── seed/                    ローカル D1 用のダミーデータ
@@ -158,10 +161,11 @@ docker compose exec app npm run deploy
 | 症状                                                                       | 対処                                                                                                                                                         |
 | -------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `環境変数 CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID が設定されていません` | `.env` に値を入れ、コンテナを作り直す（Dev Containers: **Rebuild Container**、compose: `docker compose up -d --force-recreate`）。`.env` は起動時にしか読まれない |
-| `Authentication error` などで `setup` / `deploy` が失敗する                | API トークンの権限（Workers・D1 の編集）と対象アカウントを確認する。[account-policy.md](docs/account-policy.md#5-api-トークン)                              |
+| `Authentication error` などで `setup` / `deploy` が失敗する                | API トークンの権限（Workers・D1 の編集）と対象アカウントを確認する。[cloudflare-setup.md「1-3」](docs/cloudflare-setup.md#1-3-api-トークンを発行する)                              |
 | ローカルで `Server misconfiguration`（500）になる                          | `.dev.vars` がない、または `ENVIRONMENT=local` になっていない。`localhost:8787` 以外（IP アドレスなど）でアクセスしていないかも確認する                       |
 | デプロイ先で `Server misconfiguration`（500）になる                        | `wrangler.jsonc` の `ACCESS_TEAM_DOMAIN` / `ACCESS_AUD` が空。値を入れて再デプロイする                                                                        |
-| デプロイ先で `Forbidden`（403）になる                                      | Access を経由していない、または AUD タグ・チームドメインが違う。管理者に確認する                                                                              |
+| デプロイ先で `Forbidden`（403）になる                                      | Access を経由していない、または AUD タグ・チームドメインが違う。Zero Trust の Access アプリケーションの公開ホスト名と AUD タグを確認する                                                                              |
+| Access のログイン後に「アクセス権がない」と表示される | Access アプリケーションのポリシーに、ログインしたメールアドレスが含まれているか確認する |
 | `npm run setup` の後、ローカルのデータが消えた                             | ローカル D1 は `database_id` ごとに保存されるため。`npm run db:migrate:local` と `npm run db:seed:local` を実行する                                           |
 | ソースを変更してもリロードされない                                         | 「5. Windows 向けの注意事項」を参照                                                                                                                          |
 | `port is already allocated`（8787）                                         | Dev Container と `docker compose up` を同時に起動していないか、他のプロセスが 8787 を使っていないか確認する                                                  |
@@ -171,11 +175,14 @@ docker compose exec app npm run deploy
 
 ## 7. 本採用時の移行チェックリスト
 
-- [ ] 本番用の名前（作成者名なし）で D1 を作成する: `npx wrangler d1 create <本番名>-db`
+採用されたアプリを、各自のアカウントから会社の Cloudflare アカウントへ移す。詳細は [account-policy.md「6. 本採用アプリの本番化」](docs/account-policy.md#6-本採用アプリの本番化会社アカウント)。
+
+- [ ] 管理者が会社アカウントの Zero Trust に **Google Workspace** をログイン方法として追加し、ポリシーを社内ドメイン（または Google グループ）にする
+- [ ] 会社アカウントの API トークンとアカウント ID で、本番用の D1 を作成する: `npx wrangler d1 create <本番名>-db`
 - [ ] `wrangler.jsonc` の `name`・`database_name`・`database_id` を本番用に書き換える
-- [ ] `vars` の `ACCESS_TEAM_DOMAIN` / `ACCESS_AUD` を本番用の Access アプリケーションの値にする（独自ドメインを使う場合は管理者が Access の対象に追加する）
-- [ ] 必要なら独自ドメインを `routes` で割り当て、`workers_dev` / `preview_urls` を `false` にする
+- [ ] 会社アカウントで Access アプリケーションを作成し、`vars` の `ACCESS_TEAM_DOMAIN` / `ACCESS_AUD` をその値に差し替える
+- [ ] 必要なら独自ドメインを `routes` で割り当て、Access アプリケーションの対象にする。workers.dev を使わない場合は `workers_dev` を `false` にする
 - [ ] シークレットが必要になったら `npx wrangler secret put <名前>` で設定する（`vars` に同名の値がある場合は削除してから）
-- [ ] GitHub Secrets に `CLOUDFLARE_API_TOKEN` / `CLOUDFLARE_ACCOUNT_ID` を設定し、[deploy ワークフロー](.github/workflows/deploy.yml)を有効にする（以降、本番デプロイは CI からのみ行う）
-- [ ] 勉強会で作成した各自の Worker / D1 を削除する（各自 `npm run destroy`、またはダッシュボードから管理者が削除）
+- [ ] GitHub Secrets に会社アカウントの `CLOUDFLARE_API_TOKEN` / `CLOUDFLARE_ACCOUNT_ID` を設定し、[deploy ワークフロー](.github/workflows/deploy.yml)を有効にする（以降、本番デプロイは CI からのみ行う）
+- [ ] 勉強会のデータは移行しない。各自のアカウントの Worker / D1 は `npm run destroy` で削除してよい
 - [ ] 実データの投入は本番化の後に行う
