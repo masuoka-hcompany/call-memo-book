@@ -8,3 +8,6 @@ DEV_USER_EMAIL=dev-user@example.com
 # ローカルでは使わない（デプロイ先の値は wrangler.jsonc の vars で設定する）
 ACCESS_TEAM_DOMAIN=
 ACCESS_AUD=
+
+# モック専用の仕組み（ログインユーザー切替、/__seed、/__debug、/__styleguide）を有効にする
+MOCK_MODE=true

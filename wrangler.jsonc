@@ -16,6 +16,9 @@
   // プレビュー URL は Access アプリケーションの対象外になるため無効にする
   "preview_urls": false,
 
+  // CSS をビルドせず、テキストとして読み込んで配信する（src/routes/assets.ts）
+  "rules": [{ "type": "Text", "globs": ["**/*.css"], "fallthrough": true }],
+
   "observability": {
     "enabled": true
   },

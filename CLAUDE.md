@@ -23,6 +23,7 @@ STEP1 仕様書（`docs/spec.md`）のレビュー会で使う、クリックし
 
 ## 技術
 - Hono（JSX）+ Tailwind CSS + daisyUI + htmx + Alpine.js（仕様書 9章のスタック）。CSS・JS は CDN からバージョンを固定して読み込む（ビルド工程は作らない）
+- デザインは `docs/design.md` に従う
 - データは蓄積しない。DB（D1）は使わず、コードに直接書いた固定データ（`src/mock/seeds.ts`）を、`src/mock/store.ts` のメモリ上で持つ
   - 登録・編集・削除はメモリ上のデータを書き換えるだけ。デプロイ先では Worker のインスタンスが入れ替わると固定データに戻り、インスタンスが複数あると画面ごとにデータが食い違うことがある。モックなのでそれでよく、データを保つための仕組みは作らない
   - 既存の D1 の設定（`wrangler.jsonc` の `d1_databases`、`migrations/`）は触らない

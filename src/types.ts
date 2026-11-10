@@ -3,7 +3,8 @@
 export type AppEnv = {
   // wrangler.jsonc から渡される値（型は `wrangler types` が生成する Env）
   // DEV_USER_EMAIL はローカル専用で .dev.vars にのみ書くため、ここで追加する
-  Bindings: Env & { DEV_USER_EMAIL?: string };
+  // MOCK_MODE は "true" のときだけモック専用の仕組みを有効にする（src/mock/mode.ts）
+  Bindings: Env & { DEV_USER_EMAIL?: string; MOCK_MODE?: string };
   Variables: {
     // Access で認証されたユーザーのメールアドレス
     userEmail: string;
