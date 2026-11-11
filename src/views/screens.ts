@@ -44,6 +44,7 @@ export const SCREENS: Screen[] = [
     name: "担当者登録・編集",
     nav: "companies",
     paths: ["/companies/:id{[0-9]+}/contacts/new", "/contacts/:id{[0-9]+}/edit"],
+    built: true,
   },
   { id: "S-08", name: "担当者詳細", nav: "companies", paths: ["/contacts/:id{[0-9]+}"] },
   { id: "S-10", name: "宛先一覧", nav: "recipients", paths: ["/recipients"] },

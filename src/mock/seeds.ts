@@ -467,6 +467,25 @@ const AC_SEEDS_S06: Seed[] = [
   },
 ];
 
+// 担当者登録（S-09）を開いた状態の AC：会社「マイナビ」（担当者0人）
+function s09Seed(name: string, title: string): Seed {
+  return {
+    name,
+    description: `${name} ${title}：会社「マイナビ」（担当者0人）、S-09 担当者登録（マイナビ）を開く`,
+    build: withDefault({ companies: [acCompany(1, "マイナビ", "まいなび")] }),
+    loginEmail: USER_KIKUCHI.email,
+    redirect: "/companies/1/contacts/new",
+  };
+}
+
+const AC_SEEDS_S09: Seed[] = [
+  s09Seed("AC-26", "担当者の電話番号の形式チェック"),
+  s09Seed("AC-59", "担当者の必須項目チェック"),
+  s09Seed("AC-60", "担当者のよみがなの形式チェック"),
+  s09Seed("AC-66", "担当者の電話番号が15桁を超えると保存できない"),
+  s09Seed("AC-67", "担当者の電話番号が15桁なら保存できる"),
+];
+
 // ---------- シードの一覧（/__seed） ----------
 
 export type Seed = {
@@ -501,6 +520,7 @@ export const SEEDS: Seed[] = [
   ...AC_SEEDS_S05,
   ...AC_SEEDS_S07,
   ...AC_SEEDS_S06,
+  ...AC_SEEDS_S09,
 ];
 
 export function findSeed(name: string): Seed | undefined {

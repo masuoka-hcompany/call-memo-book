@@ -6,6 +6,7 @@ import { accessAuth } from "./middleware/access.ts";
 import { currentUser } from "./middleware/current-user.ts";
 import { assets } from "./routes/assets.ts";
 import { companies } from "./routes/companies.tsx";
+import { contacts } from "./routes/contacts.tsx";
 import { mock } from "./routes/mock.tsx";
 import { placeholder } from "./routes/placeholder.tsx";
 import { styleguide } from "./routes/styleguide.tsx";
@@ -31,6 +32,7 @@ app.use(currentUser);
 
 // 画面（作った画面のルートは placeholder より前に登録し、screens.ts の built を true にする）
 app.route("/", companies);
+app.route("/", contacts);
 
 // まだ作っていない画面の仮のページ
 app.route("/", placeholder);
