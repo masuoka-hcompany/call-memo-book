@@ -1,5 +1,7 @@
 // Hono アプリ全体で使う型定義
 
+import type { User } from "./repo/types.ts";
+
 export type AppEnv = {
   // wrangler.jsonc から渡される値（型は `wrangler types` が生成する Env）
   // DEV_USER_EMAIL はローカル専用で .dev.vars にのみ書くため、ここで追加する
@@ -8,5 +10,7 @@ export type AppEnv = {
   Variables: {
     // Access で認証されたユーザーのメールアドレス
     userEmail: string;
+    // 画面上の「ログイン中の利用者」（src/middleware/current-user.ts）
+    currentUser: User;
   };
 };

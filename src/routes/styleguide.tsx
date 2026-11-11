@@ -4,14 +4,20 @@
 
 import { Hono } from "hono";
 import type { Child } from "hono/jsx";
+import { currentUser } from "../middleware/current-user.ts";
 import { mockOnly } from "../mock/mode.ts";
+import { listUsers } from "../repo/users.ts";
 import type { AppEnv } from "../types.ts";
+import { AppHeader } from "../views/AppLayout.tsx";
+import { DeleteButton, DeleteDialogBody, FlashMessage, MockBox, PendingBadge } from "../views/components.tsx";
 import { Document } from "../views/Document.tsx";
-import { LABELS } from "../views/labels.ts";
+import { LABELS, MOCK_LABELS } from "../views/labels.ts";
+import { FLASH_MESSAGES } from "../views/messages.ts";
 
 export const styleguide = new Hono<AppEnv>();
 
-styleguide.use("/__styleguide", mockOnly);
+// MOCK_MODE でなければ 404（ログイン中の利用者を決めるのは、そのあと）
+styleguide.use("/__styleguide", mockOnly, currentUser);
 
 // hover・入力中・focus は疑似クラスなので、見本では同じ見た目を固定して並べる（値は app.css と同じ）。
 // 実際の操作での見た目は、各部品を hover・Tab で確かめる。
@@ -40,9 +46,6 @@ const PALETTE = [
   { name: "黄", hex: "#F1CE3C" },
 ] as const;
 
-const MENU = ["相手検索", "取次メモ一覧", "会社一覧", "宛先一覧"] as const;
-const USERS = ["菊地", "益岡", "木村"] as const;
-
 function Section({ id, title, children }: { id: string; title: string; children: Child }) {
   return (
     <section id={id} class="mb-12">
@@ -54,14 +57,6 @@ function Section({ id, title, children }: { id: string; title: string; children:
 
 function Caption({ children }: { children: Child }) {
   return <p class="mb-1 text-sm text-secondary">{children}</p>;
-}
-
-function PendingBadge({ id, label }: { id: string; label: string }) {
-  return (
-    <span class="badge badge-warning">
-      【未決】{id} {label}
-    </span>
-  );
 }
 
 // 取次可否の値
@@ -91,44 +86,6 @@ const VERDICT_PATTERNS: { caption: string; to: string; person: Setting; company:
   { caption: "担当者のみ設定", to: "菊地", person: "つなぐ", company: "未設定" },
   { caption: "両方設定で会社と担当者が逆", to: "社長", person: "つなぐ", company: "つながない" },
 ];
-
-function Header() {
-  return (
-    <header class="border-b border-base-300 bg-base-100">
-      <div class="mx-auto flex max-w-6xl items-end justify-between gap-6 px-6 pt-4">
-        <div class="flex items-end gap-10">
-          <span class="flex items-center gap-2 pb-3">
-            <span class="inline-block size-2.5 bg-primary" aria-hidden="true" />
-            call memo book（仮）
-          </span>
-          <nav aria-label="メニュー">
-            <ul class="flex gap-6">
-              {MENU.map((name, i) => (
-                <li>
-                  <a href="#header" class="nav-item inline-block pb-3" aria-current={i === 0 ? "page" : undefined}>
-                    {name}
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </nav>
-        </div>
-        <div class="flex items-center gap-4 pb-2">
-          <span>菊地</span>
-          {/* モック専用：黄の破線で囲み、仕様の画面要素と区別する */}
-          <label class="flex items-center gap-2 border border-dashed border-warning bg-warning/20 px-2 py-1 text-sm">
-            <span>モック用：ログインユーザー切替</span>
-            <select class="select select-sm w-24">
-              {USERS.map((u) => (
-                <option>{u}</option>
-              ))}
-            </select>
-          </label>
-        </div>
-      </div>
-    </header>
-  );
-}
 
 function InputStates() {
   const states = [
@@ -217,30 +174,17 @@ function ButtonRow({ kind, label, cls }: { kind: string; label: string; cls: str
   );
 }
 
-function DeleteDialogBody() {
-  return (
-    <>
-      <p>この会社を削除しますか？ 所属する担当者も削除されます</p>
-      <div class="modal-action">
-        <form method="dialog" class="flex gap-2">
-          <button type="submit" class="btn btn-quiet">
-            {LABELS.cancel}
-          </button>
-          <button type="submit" class="btn btn-plain">
-            削除する
-          </button>
-        </form>
-      </div>
-    </>
-  );
-}
-
-styleguide.get("/__styleguide", (c) => {
+styleguide.get("/__styleguide", async (c) => {
   return c.html(
     <Document title="スタイルガイド">
       <style>{STATIC_STATE_CSS}</style>
       <div id="header">
-        <Header />
+        {/* 実際の画面と同じヘッダー（切替は本物。選ぶとログインユーザーが切り替わる） */}
+        <AppHeader
+          nav="search"
+          currentUser={c.var.currentUser}
+          mock={{ users: await listUsers(), back: "/__styleguide" }}
+        />
       </div>
       <main class="mx-auto max-w-6xl px-6 py-8">
         <p class="mb-8 text-sm text-secondary">
@@ -357,9 +301,9 @@ styleguide.get("/__styleguide", (c) => {
         </Section>
 
         <Section id="flash" title="完了メッセージ">
-          <p class="flash-done max-w-2xl px-4 py-3" role="status">
-            取次メモを登録しました
-          </p>
+          <div class="max-w-2xl">
+            <FlashMessage message={FLASH_MESSAGES.memoCreated} />
+          </div>
         </Section>
 
         <Section id="dialog" title="確認ダイアログ">
@@ -367,27 +311,22 @@ styleguide.get("/__styleguide", (c) => {
             <PendingBadge id="Q-M03" label="確認ダイアログのボタン名" />
           </p>
           <div class="mb-6 flex gap-2">
-            <button
-              type="button"
-              class="btn btn-plain"
-              onclick="document.getElementById('sg-delete-dialog').showModal()"
-            >
-              削除
-            </button>
+            {/* 見本なので「削除する」は送信せずに閉じる */}
+            <DeleteButton id="sg-delete-dialog" target="company" action={null} />
           </div>
-          <dialog id="sg-delete-dialog" class="modal">
-            <div class="modal-box">
-              <DeleteDialogBody />
-            </div>
-          </dialog>
           <Caption>開いた状態（見本）</Caption>
           <div class="modal-box sg-static-dialog">
-            <DeleteDialogBody />
+            <DeleteDialogBody target="company" action={null} />
           </div>
         </Section>
 
         <Section id="badge" title="【未決】バッジ（モック専用）">
           <PendingBadge id="Q-M01" label="採用値の強調" />
+        </Section>
+
+        <Section id="mock" title="モック専用の表示">
+          <Caption>ログインユーザー切替（ヘッダー）と、まだ作っていない画面の仮のページで使う</Caption>
+          <MockBox class="inline-block px-4 py-3">{MOCK_LABELS.notBuilt}（S-01）</MockBox>
         </Section>
       </main>
     </Document>,

@@ -126,6 +126,23 @@
 - `badge badge-warning` で「【未決】Q-Mxx 〜」と表示する。ID は `docs/questions.md` と同じ
 - 未決の部品の近く（上か右）に置く。本番では使わない
 
+### 4.11 モック専用の表示
+
+- ログインユーザー切替と、まだ作っていない画面の仮のページの表示は、黄の破線枠と薄い黄の面（`MockBox`：`border border-dashed border-warning bg-warning/20`）で囲む。Tailwind と daisyUI の標準のクラスだけで作り、`app.css` には足していない
+- 文言は `src/views/labels.ts` の `MOCK_LABELS`
+
+### 4.12 部品の置き場所
+
+画面からは次の部品を使い、同じ見た目をその場で作り直さない（`/__styleguide` も同じ部品で表示している）。
+
+| 部品 | 置き場所 |
+|---|---|
+| ヘッダー（メニュー・ログイン中の利用者名・ログインユーザー切替）、画面の見出し、完了メッセージの位置 | `src/views/AppLayout.tsx`（画面は `src/routes/page.tsx` の `renderPage` で返す） |
+| 完了メッセージ、「削除」ボタンと確認ダイアログ、【未決】バッジ、モック専用の枠 | `src/views/components.tsx`（`FlashMessage`・`DeleteButton`・`PendingBadge`・`MockBox`） |
+| 完了メッセージ・確認ダイアログの文言 | `src/views/messages.ts` |
+
+- ヘッダーは PC の幅（1,024px）でも折り返さない（`whitespace-nowrap`）
+
 ## 5. S-01 の取次可否の表示（判定列）
 
 【未決】判定列を設けることは画面構成の変更にあたるため、レビュー会で決める（`docs/questions.md` Q-M01）。画面には「【未決】Q-M01 採用値の強調（判定列）」のバッジを付ける。

@@ -34,9 +34,11 @@
 
   // デプロイ先の環境依存値。ローカルでは .dev.vars の値で上書きされる。
   // ACCESS_TEAM_DOMAIN / ACCESS_AUD が空のままだと、すべてのリクエストを拒否する（フェイルクローズ）。
+  // MOCK_MODE はレビュー会のモック用（ログインユーザー切替・シード）。Access の認証を通ったあとでだけ動く。
   "vars": {
     "ENVIRONMENT": "production",
     "ACCESS_TEAM_DOMAIN": "summer-block-0388.cloudflareaccess.com",
-    "ACCESS_AUD": "876fc623c5ea67ee810556f5e432b951cbe140cedc3559407d1a9b6b3602ce2c"
+    "ACCESS_AUD": "876fc623c5ea67ee810556f5e432b951cbe140cedc3559407d1a9b6b3602ce2c",
+    "MOCK_MODE": "true"
   }
 }

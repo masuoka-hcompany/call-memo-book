@@ -127,8 +127,12 @@ docker compose exec app npm run deploy
 ├── src/
 │   ├── index.tsx            エントリポイント（ミドルウェアとルートの登録）
 │   ├── middleware/access.ts Cloudflare Access の JWT 検証
-│   ├── routes/items.tsx     CRUD サンプル（一覧・登録・削除）
-│   ├── views/Layout.tsx     共通レイアウト（Hono JSX）
+│   ├── middleware/current-user.ts 画面上のログイン中の利用者（モックではログインユーザー切替）
+│   ├── domain/              優先ルール・バリデーション・日本時間の扱い
+│   ├── repo/                データアクセス（後で D1 に差し替える層）
+│   ├── mock/                モック専用（メモリ上のデータ、シード、MOCK_MODE の判定）
+│   ├── routes/              画面とモック専用のルート（/__seed、/__debug/store、/__styleguide）
+│   ├── views/               共通レイアウト・部品・文言（Hono JSX）
 │   └── types.ts             Hono の型（Bindings / Variables）
 ├── test/                    テスト（@cloudflare/vitest-plugin）
 ├── compose.yaml / Dockerfile ローカル開発用コンテナ
@@ -146,6 +150,7 @@ docker compose exec app npm run deploy
 | `ACCESS_TEAM_DOMAIN` | 不要                       | `<チーム名>.cloudflareaccess.com`        |
 | `ACCESS_AUD`         | 不要                       | Access アプリケーションの AUD タグ       |
 | `DEV_USER_EMAIL`     | ダミーユーザーのメール     | 設定しない                               |
+| `MOCK_MODE`          | `true`                     | `true`（レビュー会のモック用。Access の認証は外さない） |
 
 ### Access の検証
 
