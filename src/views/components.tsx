@@ -27,6 +27,84 @@ export function FlashMessage({ message }: { message: string }) {
   );
 }
 
+// ---------- 入力欄（design.md 4.2・4.3） ----------
+// 項目名は入力欄の上に置き、<label> でつなぐ。ブラウザの入力チェックは使わない（required・maxlength を付けない）。
+// エラーは入力欄のすぐ下に1行ずつ並べ、aria-describedby でつなぐ（1つの欄に複数のエラーもある。Q-M09）。
+
+type FieldProps = {
+  // name と id（id は "field-{name}"）
+  name: string;
+  // 項目名（エラーメッセージの {項目名} と同じ）
+  label: string;
+  value: string;
+  errors?: string[] | undefined;
+};
+
+function FieldErrors({ id, errors }: { id: string; errors: string[] }) {
+  return (
+    <div id={id}>
+      {errors.map((message) => (
+        <p class="error-text mt-1 text-sm">{message}</p>
+      ))}
+    </div>
+  );
+}
+
+function fieldAttrs(name: string, errors: string[] | undefined) {
+  const id = `field-${name}`;
+  const hasError = errors !== undefined && errors.length > 0;
+  return {
+    id,
+    errorId: `${id}-error`,
+    hasError,
+    aria: hasError ? { "aria-invalid": "true", "aria-describedby": `${id}-error` } : {},
+  };
+}
+
+// 1行の入力欄
+export function TextField({ name, label, value, errors }: FieldProps) {
+  const f = fieldAttrs(name, errors);
+  return (
+    <div class="mb-5">
+      <label for={f.id} class="mb-1 block text-sm">
+        {label}
+      </label>
+      <input
+        type="text"
+        id={f.id}
+        name={name}
+        value={value}
+        class={`input w-full max-w-xl ${f.hasError ? "input-error" : ""}`}
+        {...f.aria}
+      />
+      {f.hasError && <FieldErrors id={f.errorId} errors={errors as string[]} />}
+    </div>
+  );
+}
+
+// 複数行の入力欄
+export function TextAreaField({ name, label, value, errors, rows = 4 }: FieldProps & { rows?: number }) {
+  const f = fieldAttrs(name, errors);
+  return (
+    <div class="mb-5">
+      <label for={f.id} class="mb-1 block text-sm">
+        {label}
+      </label>
+      <textarea
+        id={f.id}
+        name={name}
+        rows={rows}
+        class={`textarea w-full max-w-xl ${f.hasError ? "textarea-error" : ""}`}
+        {...f.aria}
+      >
+        {/* HTML は <textarea> 直後の改行を1つ読み飛ばすため、改行で始まる値を残すように改行を1つ足す */}
+        {`\n${value}`}
+      </textarea>
+      {f.hasError && <FieldErrors id={f.errorId} errors={errors as string[]} />}
+    </div>
+  );
+}
+
 type DeleteTarget = keyof typeof CONFIRM_DELETE_MESSAGES;
 
 // 「削除」ボタンと削除の確認ダイアログ（design.md 4.9）

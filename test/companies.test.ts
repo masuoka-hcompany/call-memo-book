@@ -4,7 +4,7 @@ import { env } from "cloudflare:workers";
 import { describe, expect, it } from "vitest";
 import app from "../src/index.tsx";
 import { buildDemoData, findSeed } from "../src/mock/seeds.ts";
-import { replaceStore } from "../src/mock/store.ts";
+import { getStore, replaceStore } from "../src/mock/store.ts";
 
 const BASE = "http://localhost:8787";
 const mockEnv = { ...env, ENVIRONMENT: "local", MOCK_MODE: "true" };
@@ -127,5 +127,162 @@ describe("S-05 のシード", () => {
     expect(res.status).toBe(303);
     expect(res.headers.get("Location")).toBe("/companies");
     expect(res.headers.getSetCookie().join(";")).toContain("mock_user=1");
+  });
+});
+
+function post(path: string, form: Record<string, string>, cookie?: string) {
+  return app.request(
+    `${BASE}${path}`,
+    {
+      method: "POST",
+      body: new URLSearchParams(form),
+      headers: { Origin: BASE, ...(cookie ? { Cookie: cookie } : {}) },
+    },
+    mockEnv,
+  );
+}
+
+describe("S-07 会社登録・編集", () => {
+  it("登録はすべて空欄で開き、項目名・「保存」ボタンを表示する。ブラウザの入力チェックは使わない", async () => {
+    useSeed("AC-23");
+    const { status, html } = await page("/companies/new");
+    expect(status).toBe(200);
+    expect(html).toContain("<title>会社登録・編集</title>");
+    expect(html).toMatch(/href="\/companies" class="nav-item[^"]*" aria-current="page"/);
+    expect(html).toContain('<label for="field-name" class="mb-1 block text-sm">会社名</label>');
+    expect(html).toContain('<label for="field-kana" class="mb-1 block text-sm">会社名のよみがな</label>');
+    expect(html).toContain('<label for="field-memo" class="mb-1 block text-sm">メモ</label>');
+    expect(html).toMatch(/<button type="submit" class="btn btn-primary">保存<\/button>/);
+    expect(html).toContain("novalidate");
+    expect(html).not.toMatch(/required|maxlength|pattern=/);
+    expect(html).not.toContain("error-text");
+  });
+
+  it("AC-55：何も入力せずに保存すると、よみがな欄だけに「会社名のよみがなは必須です」。保存しない", async () => {
+    useSeed("AC-55");
+    const res = await post("/companies/new", { name: "", kana: "", memo: "" });
+    expect(res.status).toBe(200);
+    const html = await res.text();
+    expect(html).toContain('id="field-kana-error"><p class="error-text mt-1 text-sm">会社名のよみがなは必須です</p>');
+    expect(html).not.toContain("field-name-error");
+    expect(html).toMatch(/id="field-kana"[^>]*class="input w-full max-w-xl input-error"[^>]*aria-invalid="true"/);
+    expect(getStore().companies).toHaveLength(0);
+  });
+
+  it("AC-23：よみがながカタカナならエラー。入力した値は残す。保存しない", async () => {
+    useSeed("AC-23");
+    const html = await (await post("/companies/new", { name: "マイナビ", kana: "マイナビ", memo: "" })).text();
+    expect(html).toContain("会社名のよみがなはひらがなで入力してください");
+    expect(html).toContain('value="マイナビ"');
+    expect(getStore().companies).toHaveLength(0);
+  });
+
+  it("AC-56：会社名が256文字ならエラー。保存しない", async () => {
+    useSeed("AC-56");
+    const html = await (await post("/companies/new", { name: "あ".repeat(256), kana: "てすと", memo: "" })).text();
+    expect(html).toContain(
+      'id="field-name-error"><p class="error-text mt-1 text-sm">会社名は255文字以内で入力してください</p>',
+    );
+    expect(getStore().companies).toHaveLength(0);
+  });
+
+  it("1つの欄の複数のエラーを1行ずつ表示する（Q-M09）", async () => {
+    useSeed("AC-23");
+    const html = await (await post("/companies/new", { name: "", kana: "ア".repeat(256), memo: "" })).text();
+    expect(html).toContain(
+      '<p class="error-text mt-1 text-sm">会社名のよみがなはひらがなで入力してください</p><p class="error-text mt-1 text-sm">会社名のよみがなは255文字以内で入力してください</p>',
+    );
+  });
+
+  it("AC-21：登録すると S-06 会社詳細に移り「会社を登録しました」。更新者・更新日時を記録する", async () => {
+    useSeed("AC-21");
+    const before = Date.now();
+    const res = await post("/companies/new", { name: "マイナビ", kana: "まいなび", memo: "" }, "mock_user=1");
+    expect(res.status).toBe(303);
+    expect(res.headers.get("Location")).toBe("/companies/1");
+    expect(res.headers.getSetCookie().join(";")).toContain("flash=companyCreated");
+    const [company] = getStore().companies;
+    expect(company).toMatchObject({
+      id: 1,
+      name: "マイナビ",
+      kana: "まいなび",
+      memo: "",
+      deleted: false,
+      updatedBy: 1,
+    });
+    expect(Date.parse(company?.updatedAt ?? "")).toBeGreaterThanOrEqual(before - 1000);
+  });
+
+  it("AC-22：同じ会社名の会社も登録でき、S-05 に2行表示される", async () => {
+    useSeed("AC-22");
+    const res = await post("/companies/new", { name: "マイナビ", kana: "まいなび", memo: "" });
+    expect(res.headers.get("Location")).toBe("/companies/2");
+    expect(rows((await page("/companies")).html).filter((r) => r[0] === "マイナビ")).toHaveLength(2);
+  });
+
+  it("AC-68：会社名が空でも登録でき、S-05 に会社名の代わりによみがなを表示する", async () => {
+    useSeed("AC-68");
+    const res = await post("/companies/new", { name: "", kana: "みいだす", memo: "" });
+    expect(res.status).toBe(303);
+    expect(rows((await page("/companies")).html)).toEqual([["みいだす", "みいだす", "0"]]);
+  });
+
+  it("会社名・よみがなは前後の空白を削って保存する。メモは削らない（Q-M11）", async () => {
+    useSeed("AC-21");
+    await post("/companies/new", { name: " マイナビ　", kana: "\tまいなび ", memo: " 採用媒体\r\n" });
+    expect(getStore().companies[0]).toMatchObject({ name: "マイナビ", kana: "まいなび", memo: " 採用媒体\r\n" });
+  });
+
+  it("AC-39：編集は登録済みの値で開き、保存すると「会社を更新しました」。更新者は益岡", async () => {
+    useSeed("AC-39");
+    const form = await page("/companies/1/edit", "mock_user=2");
+    expect(form.html).toContain('value="マイナビ"');
+    expect(form.html).toContain('value="まいなび"');
+
+    const res = await post(
+      "/companies/1/edit",
+      { name: "マイナビ", kana: "まいなび", memo: "採用媒体" },
+      "mock_user=2",
+    );
+    expect(res.status).toBe(303);
+    expect(res.headers.get("Location")).toBe("/companies/1");
+    expect(res.headers.getSetCookie().join(";")).toContain("flash=companyUpdated");
+    expect(getStore().companies[0]).toMatchObject({ memo: "採用媒体", updatedBy: 2 });
+  });
+
+  it("編集でエラーなら保存しない", async () => {
+    useSeed("AC-39");
+    const html = await (await post("/companies/1/edit", { name: "マイナビ", kana: "", memo: "x" })).text();
+    expect(html).toContain("会社名のよみがなは必須です");
+    expect(getStore().companies[0]).toMatchObject({ kana: "まいなび", memo: "" });
+  });
+
+  it("メモの改行と、改行で始まる値を入力欄に残す", async () => {
+    useSeed("AC-39");
+    for (const company of getStore().companies) company.memo = "\n1行目\n2行目";
+    const { html } = await page("/companies/1/edit");
+    expect(html).toMatch(/<textarea[^>]*>\n\n1行目\n2行目<\/textarea>/);
+  });
+
+  it("存在しない・削除された会社の編集は 404", async () => {
+    replaceStore(buildDemoData());
+    expect((await page("/companies/999/edit")).status).toBe(404);
+    // デモデータの会社 11 は削除済み
+    expect((await page("/companies/11/edit")).status).toBe(404);
+    expect((await post("/companies/11/edit", { name: "x", kana: "えっくす", memo: "" })).status).toBe(404);
+  });
+});
+
+describe("S-07 のシード", () => {
+  it.each(["AC-23", "AC-55", "AC-56"])("%s は菊地で S-07 会社登録を開く", async (name) => {
+    const res = await app.request(`${BASE}/__seed/${name}`, {}, mockEnv);
+    expect(res.headers.get("Location")).toBe("/companies/new");
+    expect(res.headers.getSetCookie().join(";")).toContain("mock_user=1");
+  });
+
+  it("AC-39 は益岡で S-06 会社詳細（マイナビ）を開く", async () => {
+    const res = await app.request(`${BASE}/__seed/AC-39`, {}, mockEnv);
+    expect(res.headers.get("Location")).toBe("/companies/1");
+    expect(res.headers.getSetCookie().join(";")).toContain("mock_user=2");
   });
 });

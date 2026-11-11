@@ -34,6 +34,9 @@ export const CONFIRM_DELETE_MESSAGES = {
   recipient: "この宛先を削除しますか？", // F-09
 } as const;
 
+// 入力画面のボタン名（仕様書 7.1「「保存」ボタン」）
+export const SAVE_LABEL = "保存";
+
 // ボタン名（仕様書の操作の流れ「「削除」を押す」「「削除する」を押す」）
 export const DELETE_LABEL = "削除";
 export const DELETE_CONFIRM_LABEL = "削除する";

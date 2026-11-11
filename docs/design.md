@@ -140,7 +140,10 @@
 |---|---|
 | ヘッダー（メニュー・ログイン中の利用者名・ログインユーザー切替）、画面の見出し、完了メッセージの位置 | `src/views/AppLayout.tsx`（画面は `src/routes/page.tsx` の `renderPage` で返す） |
 | 完了メッセージ、「削除」ボタンと確認ダイアログ、【未決】バッジ、モック専用の枠 | `src/views/components.tsx`（`FlashMessage`・`DeleteButton`・`PendingBadge`・`MockBox`） |
-| 完了メッセージ・確認ダイアログの文言 | `src/views/messages.ts` |
+| 入力欄（項目名・入力欄・エラーメッセージ。4.2・4.3） | `src/views/components.tsx`（1行：`TextField`、複数行：`TextAreaField`）。幅は `max-w-xl` |
+| 完了メッセージ・確認ダイアログ・「保存」ボタンの文言 | `src/views/messages.ts` |
+
+- 入力画面は、入力欄を縦に並べ、最後に「保存」（主要ボタン）を置く（S-07 が最初の例）
 
 - ヘッダーは PC の幅（1,024px）でも折り返さない（`whitespace-nowrap`）
 

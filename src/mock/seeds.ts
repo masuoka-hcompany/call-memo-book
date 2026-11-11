@@ -362,6 +362,38 @@ const AC_SEEDS_S05: Seed[] = [
   },
 ];
 
+// 会社登録・編集（S-07）に関わる AC
+const AC_SEEDS_S07: Seed[] = [
+  {
+    name: "AC-23",
+    description: "AC-23 よみがなの形式チェック：会社0件、S-07 会社登録を開く",
+    build: buildDefaultData,
+    loginEmail: USER_KIKUCHI.email,
+    redirect: "/companies/new",
+  },
+  {
+    name: "AC-55",
+    description: "AC-55 会社の必須項目チェック：会社0件、S-07 会社登録を開く",
+    build: buildDefaultData,
+    loginEmail: USER_KIKUCHI.email,
+    redirect: "/companies/new",
+  },
+  {
+    name: "AC-56",
+    description: "AC-56 会社名が上限を超えると保存できない：会社0件、S-07 会社登録を開く",
+    build: buildDefaultData,
+    loginEmail: USER_KIKUCHI.email,
+    redirect: "/companies/new",
+  },
+  {
+    name: "AC-39",
+    description: "AC-39 会社を編集する：益岡でログイン、会社「マイナビ」（メモなし）、S-06 会社詳細（マイナビ）を開く",
+    build: withDefault({ companies: [acCompany(1, "マイナビ", "まいなび")] }),
+    loginEmail: USER_MASUOKA.email,
+    redirect: "/companies/1",
+  },
+];
+
 // ---------- シードの一覧（/__seed） ----------
 
 export type Seed = {
@@ -394,6 +426,7 @@ export const SEEDS: Seed[] = [
   },
   // AC ごとのシード（/__seed/AC-xx）。その AC の画面を作るときに足す
   ...AC_SEEDS_S05,
+  ...AC_SEEDS_S07,
 ];
 
 export function findSeed(name: string): Seed | undefined {
