@@ -11,9 +11,16 @@ export function countChars(value: string): number {
   return [...normalizeNewlines(value)].length;
 }
 
+// 1行の欄（会社名・担当者名・氏名・よみがな・表示名・電話番号）の入力をそろえる：前後の空白を削る
+// （半角・全角スペース、タブ、改行。JS の trim は全角スペース U+3000 も削る）。間の空白は残す。
+// 複数行の欄（伝言・メモ）には使わず、入力どおりに保存する。
+// 入力チェック・文字数の判定は、削ったあとの値で行う（docs/questions.md Q-M11。2026-11-11 決定）。
+export function trimSingleLine(value: string): string {
+  return value.trim();
+}
+
 // 入力が空か。空文字と、空白（半角・全角スペース、タブ、改行など）だけの入力を空とみなす
 // （docs/questions.md Q-M07。2026-11-11 決定）。JS の \s は全角スペース U+3000 も含む。
-// 前後の空白は削らない（空でなければ入力どおりに保存する）。
 export function isEmpty(value: string): boolean {
   return /^\s*$/u.test(value);
 }

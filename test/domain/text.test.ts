@@ -1,5 +1,40 @@
 import { describe, expect, it } from "vitest";
-import { countChars, displayName, formatNumber, isEmpty, normalizeNewlines } from "../../src/domain/text.ts";
+import {
+  countChars,
+  displayName,
+  formatNumber,
+  isEmpty,
+  normalizeNewlines,
+  trimSingleLine,
+} from "../../src/domain/text.ts";
+import { NAME_MAX, validatePhone, validateText } from "../../src/domain/validation.ts";
+
+describe("trimSingleLine（1行の欄の前後の空白を削る。Q-M11）", () => {
+  it("前後の半角・全角スペース、タブ、改行を削る", () => {
+    expect(trimSingleLine(" はらだ ")).toBe("はらだ");
+    expect(trimSingleLine("　はらだ　")).toBe("はらだ");
+    expect(trimSingleLine("\tはらだ\r\n")).toBe("はらだ");
+  });
+
+  it("間の空白は残す", () => {
+    expect(trimSingleLine(" はらだ　いちろう ")).toBe("はらだ　いちろう");
+    expect(trimSingleLine("はらだ いちろう")).toBe("はらだ いちろう");
+  });
+
+  it("空白だけなら空文字になる", () => {
+    expect(trimSingleLine(" 　\t")).toBe("");
+  });
+
+  it("削ったあとの値で文字数を数える（前後の空白を含めて256文字でも、削って255文字ならエラーなし）", () => {
+    const value = ` ${"あ".repeat(255)}`;
+    expect(validateText(trimSingleLine(value), { label: "会社名", max: NAME_MAX })).toEqual([]);
+  });
+
+  it("電話番号の前後の空白を削ったあとはエラーにならない（全角数字・ハイフンは変換しない）", () => {
+    expect(validatePhone(trimSingleLine("0312345678 "), null)).toEqual([]);
+    expect(validatePhone(trimSingleLine(" 03-1234-5678 "), null)).toEqual(["電話番号は半角数字のみで入力してください"]);
+  });
+});
 
 describe("countChars（文字数の数え方）", () => {
   it("全角・半角を区別せず1文字と数える", () => {
