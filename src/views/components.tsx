@@ -61,8 +61,14 @@ function fieldAttrs(name: string, errors: string[] | undefined) {
   };
 }
 
-// 1行の入力欄
-export function TextField({ name, label, value, errors }: FieldProps) {
+// 1行の入力欄。type は "text"（既定）か、日時の "datetime-local"（日本時間「2026-11-05T14:30」）
+export function TextField({
+  name,
+  label,
+  value,
+  errors,
+  type = "text",
+}: FieldProps & { type?: "text" | "datetime-local" }) {
   const f = fieldAttrs(name, errors);
   return (
     <div class="mb-5">
@@ -70,7 +76,7 @@ export function TextField({ name, label, value, errors }: FieldProps) {
         {label}
       </label>
       <input
-        type="text"
+        type={type}
         id={f.id}
         name={name}
         value={value}

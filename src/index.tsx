@@ -7,6 +7,7 @@ import { currentUser } from "./middleware/current-user.ts";
 import { assets } from "./routes/assets.ts";
 import { companies } from "./routes/companies.tsx";
 import { contacts } from "./routes/contacts.tsx";
+import { memos } from "./routes/memos.tsx";
 import { mock } from "./routes/mock.tsx";
 import { placeholder } from "./routes/placeholder.tsx";
 import { recipients } from "./routes/recipients.tsx";
@@ -34,6 +35,7 @@ app.use(currentUser);
 
 // 画面（作った画面のルートは placeholder より前に登録し、screens.ts の built を true にする）
 app.route("/", search);
+app.route("/", memos);
 app.route("/", companies);
 app.route("/", contacts);
 app.route("/", recipients);

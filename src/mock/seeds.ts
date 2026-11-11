@@ -684,6 +684,48 @@ const AC_SEEDS_S01: Seed[] = [
   ),
 ];
 
+// 取次メモ作成（S-04）に関わる AC：菊地でログイン。取次メモは0件
+const s04Seed = (name: string, title: string, add: Partial<StoreData> = {}): Seed =>
+  s01Seed(name, `${name} ${title}：取次メモ0件、S-04 取次メモ作成を開く`, add, "/memos/new");
+
+const AC_SEEDS_S04: Seed[] = [
+  // Given に検索語がないため、「原田」で検索して「マイナビ／原田」を選んだ S-01 にリダイレクトする
+  s01Seed(
+    "AC-05",
+    "AC-05 登録済みの相手の取次メモを作成する：マイナビ／原田（0312345678）を選んだ S-01",
+    { companies: [MYNAVI()], contacts: [HARADA()] },
+    `/?q=${encodeURIComponent("原田")}&contact=1`,
+  ),
+  s01Seed(
+    "AC-06",
+    "AC-06 未登録の相手の取次メモを作成する：会社0件、「ミイダス」を検索して0件の S-01",
+    {},
+    `/?q=${encodeURIComponent("ミイダス")}`,
+  ),
+  s04Seed("AC-07", "必須項目チェック（すべて空欄で開く）"),
+  s04Seed("AC-08", "電話番号の形式チェック"),
+  s04Seed("AC-09", "折り返し希望のときの電話番号必須チェック"),
+  s04Seed("AC-10", "会社名が上限を超えると保存できない"),
+  s04Seed("AC-33", "会社名が上限ちょうどなら保存できる"),
+  s04Seed("AC-36", "伝言が上限を超えると保存できない"),
+  s04Seed("AC-37", "伝言が上限ちょうどなら保存できる"),
+  s04Seed("AC-51", "削除された宛先はプルダウンに表示されない（宛先「木村」は削除済み）", {
+    recipients: [
+      ...baseRecipients(),
+      {
+        id: 3,
+        displayName: USER_KIMURA.name,
+        email: USER_KIMURA.email,
+        deleted: true,
+        updatedBy: USER_KIKUCHI.id,
+        updatedAt: SEEDED_AT,
+      },
+    ],
+  }),
+  s04Seed("AC-64", "電話番号が15桁を超えると保存できない"),
+  s04Seed("AC-65", "電話番号が15桁なら保存できる"),
+];
+
 // ---------- シードの一覧（/__seed） ----------
 
 export type Seed = {
@@ -716,6 +758,7 @@ export const SEEDS: Seed[] = [
   },
   // AC ごとのシード（/__seed/AC-xx）。その AC の画面を作るときに足す
   ...AC_SEEDS_S01,
+  ...AC_SEEDS_S04,
   ...AC_SEEDS_S05,
   ...AC_SEEDS_S07,
   ...AC_SEEDS_S06,
