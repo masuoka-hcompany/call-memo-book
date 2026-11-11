@@ -64,6 +64,7 @@
 - hover：枠を補助グレー `#6B6B66` にする
 - 入力中：枠を黒にし、内側に 1px 足して 2px の単線に見せる（`box-shadow: inset`）。外側の二重線（daisyUI の outline）は出さない
 - S-01 の検索欄だけ `input-lg` で一回り大きくする。形と色はほかの入力欄と同じ
+- 検索欄（`type="search"`）の消去ボタン「×」は出さない。Chrome・Edge が青で表示し、パレットにない色になるため（`app.css` で消している）
 - 項目名は入力欄の上に置き、`<label>` で入力欄とつなぐ。項目名はエラーメッセージの {項目名} と同じ（CLAUDE.md）
 - ブラウザの入力チェックは使わない（`<form novalidate>`。`required`・`maxlength`・`pattern` を付けない）
 
@@ -141,6 +142,7 @@
 | ヘッダー（メニュー・ログイン中の利用者名・ログインユーザー切替）、画面の見出し、完了メッセージの位置 | `src/views/AppLayout.tsx`（画面は `src/routes/page.tsx` の `renderPage` で返す） |
 | 完了メッセージ、「削除」ボタンと確認ダイアログ、【未決】バッジ、モック専用の枠 | `src/views/components.tsx`（`FlashMessage`・`DeleteButton`・`PendingBadge`・`MockBox`） |
 | 入力欄（項目名・入力欄・エラーメッセージ。4.2・4.3） | `src/views/components.tsx`（1行：`TextField`、複数行：`TextAreaField`、プルダウン：`SelectField`。プルダウンは先頭に空の選択肢を置く）。幅は `max-w-xl` |
+| S-01 の取次可否の判定と内訳（5章） | `src/views/verdict.tsx`（`Verdict`・`Breakdown`）。`/__styleguide` の見本も同じ部品。採用値は `resolveSetting` で決めて渡す |
 | 宛先ごとの取次可否の表と「保存」ボタン（S-06・S-08） | `src/views/SettingsSection.tsx`（`SettingsSection`）。送られた値の読み取りは `src/routes/settings-form.ts` |
 | 完了メッセージ・確認ダイアログ・「保存」ボタンの文言 | `src/views/messages.ts` |
 

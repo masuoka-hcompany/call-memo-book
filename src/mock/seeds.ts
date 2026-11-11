@@ -591,6 +591,99 @@ const AC_SEEDS_S10: Seed[] = [
   },
 ];
 
+// 相手検索（S-01）を開いた状態の AC：菊地でログイン
+// Given に電話番号がない担当者は、AC-45 と同じ「原田」0312345678・「佐藤」0398765432 とする
+
+function companySetting(companyId: Id, recipientId: Id, value: SettingValue): CompanySetting {
+  return { companyId, recipientId, value, updatedBy: USER_KIKUCHI.id, updatedAt: SEEDED_AT };
+}
+
+function contactSetting(contactId: Id, recipientId: Id, value: SettingValue): ContactSetting {
+  return { contactId, recipientId, value, updatedBy: USER_KIKUCHI.id, updatedAt: SEEDED_AT };
+}
+
+const MYNAVI = () => acCompany(1, "マイナビ", "まいなび");
+const HARADA = () => acContact(1, 1, "原田", "はらだ", "0312345678");
+const SATO = () => acContact(2, 1, "佐藤", "さとう", "0398765432");
+
+function s01Seed(name: string, description: string, add: Partial<StoreData>, redirect = "/"): Seed {
+  return { name, description, build: withDefault(add), loginEmail: USER_KIKUCHI.email, redirect };
+}
+
+const AC_SEEDS_S01: Seed[] = [
+  s01Seed("AC-01", "AC-01 担当者名の部分一致で検索できる：マイナビ／原田（0312345678）、S-01 を開く", {
+    companies: [MYNAVI()],
+    contacts: [HARADA()],
+  }),
+  s01Seed("AC-02", "AC-02 よみがなで検索できる：マイナビ（まいなび）に原田・佐藤、S-01 を開く", {
+    companies: [MYNAVI()],
+    contacts: [HARADA(), SATO()],
+  }),
+  // 会社「マイナビ」×宛先「菊地」は「未設定」なので行を作らない（行がなければ未設定）
+  s01Seed(
+    "AC-03",
+    "AC-03 宛先ごとの取次可否を表示する：会社 菊地=未設定・社長=つなぐ、原田 菊地=つながない・社長=つなぐ、「原田」を検索した S-01",
+    {
+      companies: [MYNAVI()],
+      contacts: [HARADA()],
+      companySettings: [companySetting(1, RECIPIENT_SHACHO_ID, "connect")],
+      contactSettings: [
+        contactSetting(1, RECIPIENT_KIKUCHI_ID, "decline"),
+        contactSetting(1, RECIPIENT_SHACHO_ID, "connect"),
+      ],
+    },
+    `/?q=${encodeURIComponent("原田")}`,
+  ),
+  s01Seed("AC-04", "AC-04 検索結果が0件：会社・担当者0件、S-01 を開く", {}),
+  s01Seed("AC-35", "AC-35 検索欄が空のときは検索しない：マイナビ／原田、S-01 を開く（検索結果なし）", {
+    companies: [MYNAVI()],
+    contacts: [HARADA()],
+  }),
+  s01Seed("AC-44", "AC-44 電話番号で検索できる：マイナビ／原田（0312345678）、S-01 を開く", {
+    companies: [MYNAVI()],
+    contacts: [HARADA()],
+  }),
+  s01Seed("AC-45", "AC-45 会社名で検索すると担当者全員が表示される：マイナビに原田・佐藤、S-01 を開く", {
+    companies: [MYNAVI()],
+    contacts: [HARADA(), SATO()],
+  }),
+  s01Seed(
+    "AC-46",
+    "AC-46 担当者のいない会社は会社の取次可否だけを表示する：ミイダス（担当者0人。菊地=つながない・社長=つなぐ）、S-01 を開く",
+    {
+      companies: [acCompany(1, "ミイダス", "みいだす")],
+      companySettings: [
+        companySetting(1, RECIPIENT_KIKUCHI_ID, "decline"),
+        companySetting(1, RECIPIENT_SHACHO_ID, "connect"),
+      ],
+    },
+  ),
+  s01Seed("AC-47", "AC-47 削除された担当者は検索結果に表示されない：マイナビに原田（削除済み）・佐藤、S-01 を開く", {
+    companies: [MYNAVI()],
+    contacts: [{ ...HARADA(), deleted: true }, SATO()],
+  }),
+  s01Seed(
+    "AC-48",
+    "AC-48 削除された宛先の取次可否は表示されない：宛先「木村」（削除済み）、マイナビ／原田、「原田」を検索した S-01",
+    {
+      recipients: [
+        ...baseRecipients(),
+        {
+          id: 3,
+          displayName: USER_KIMURA.name,
+          email: USER_KIMURA.email,
+          deleted: true,
+          updatedBy: USER_KIKUCHI.id,
+          updatedAt: SEEDED_AT,
+        },
+      ],
+      companies: [MYNAVI()],
+      contacts: [HARADA()],
+    },
+    `/?q=${encodeURIComponent("原田")}`,
+  ),
+];
+
 // ---------- シードの一覧（/__seed） ----------
 
 export type Seed = {
@@ -622,6 +715,7 @@ export const SEEDS: Seed[] = [
     redirect: "/",
   },
   // AC ごとのシード（/__seed/AC-xx）。その AC の画面を作るときに足す
+  ...AC_SEEDS_S01,
   ...AC_SEEDS_S05,
   ...AC_SEEDS_S07,
   ...AC_SEEDS_S06,

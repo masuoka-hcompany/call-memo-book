@@ -4,6 +4,7 @@
 
 import { Hono } from "hono";
 import type { Child } from "hono/jsx";
+import { resolveSetting, type SettingValue } from "../domain/setting.ts";
 import { currentUser } from "../middleware/current-user.ts";
 import { mockOnly } from "../mock/mode.ts";
 import { listUsers } from "../repo/users.ts";
@@ -13,6 +14,7 @@ import { DeleteButton, DeleteDialogBody, FlashMessage, MockBox, PendingBadge } f
 import { Document } from "../views/Document.tsx";
 import { LABELS, MOCK_LABELS } from "../views/labels.ts";
 import { FLASH_MESSAGES } from "../views/messages.ts";
+import { Breakdown, Verdict } from "../views/verdict.tsx";
 
 export const styleguide = new Hono<AppEnv>();
 
@@ -59,32 +61,12 @@ function Caption({ children }: { children: Child }) {
   return <p class="mb-1 text-sm text-secondary">{children}</p>;
 }
 
-// 取次可否の値
-type Setting = "つなぐ" | "つながない" | "未設定";
-
-function Verdict({ value }: { value: Setting }) {
-  if (value === "つながない") return <span class="verdict verdict-ng">✕ つながない</span>;
-  if (value === "つなぐ") return <span class="verdict verdict-ok">● つなぐ</span>;
-  return <span class="verdict verdict-unset">― 未設定</span>;
-}
-
-function Breakdown({ person, company }: { person: Setting; company: Setting }) {
-  // 優先ルール（仕様書 3章）：担当者が「未設定」以外なら担当者、「未設定」なら会社を採用する
-  const personAdopted = person !== "未設定";
-  return (
-    <span class="source-value">
-      {personAdopted ? <span class="source-adopted">担当者：{person} ← 採用</span> : <>担当者：{person}</>}
-      {"　／　"}
-      {personAdopted ? <>会社：{company}</> : <span class="source-adopted">会社：{company} ← 採用</span>}
-    </span>
-  );
-}
-
-const VERDICT_PATTERNS: { caption: string; to: string; person: Setting; company: Setting }[] = [
-  { caption: "両方未設定", to: "菊地", person: "未設定", company: "未設定" },
-  { caption: "会社のみ設定", to: "社長", person: "未設定", company: "つながない" },
-  { caption: "担当者のみ設定", to: "菊地", person: "つなぐ", company: "未設定" },
-  { caption: "両方設定で会社と担当者が逆", to: "社長", person: "つなぐ", company: "つながない" },
+// 判定列の4つの組み合わせ（design.md 5.4）。部品は S-01 と同じ src/views/verdict.tsx
+const VERDICT_PATTERNS: { caption: string; to: string; person: SettingValue; company: SettingValue }[] = [
+  { caption: "両方未設定", to: "菊地", person: "unset", company: "unset" },
+  { caption: "会社のみ設定", to: "社長", person: "unset", company: "decline" },
+  { caption: "担当者のみ設定", to: "菊地", person: "connect", company: "unset" },
+  { caption: "両方設定で会社と担当者が逆", to: "社長", person: "connect", company: "decline" },
 ];
 
 function InputStates() {
@@ -272,24 +254,27 @@ styleguide.get("/__styleguide", async (c) => {
             <PendingBadge id="Q-M01" label="採用値の強調（判定列）" />
           </p>
           <div class="grid grid-cols-2 gap-8">
-            {VERDICT_PATTERNS.map((p) => (
-              <div>
-                <Caption>{p.caption}</Caption>
-                <table class="w-full">
-                  <tbody>
-                    <tr class="border-b border-base-300">
-                      <td class="py-2 pr-4 font-bold">{p.to}</td>
-                      <td class="py-2 pr-4">
-                        <Verdict value={p.person !== "未設定" ? p.person : p.company} />
-                      </td>
-                      <td class="py-2">
-                        <Breakdown person={p.person} company={p.company} />
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            ))}
+            {VERDICT_PATTERNS.map((p) => {
+              const resolved = resolveSetting(p.person, p.company);
+              return (
+                <div>
+                  <Caption>{p.caption}</Caption>
+                  <table class="w-full">
+                    <tbody>
+                      <tr class="border-b border-base-300">
+                        <td class="py-2 pr-4 font-bold">{p.to}</td>
+                        <td class="py-2 pr-4">
+                          <Verdict value={resolved.value} />
+                        </td>
+                        <td class="py-2">
+                          <Breakdown contact={p.person} company={p.company} resolved={resolved} />
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              );
+            })}
           </div>
         </Section>
 

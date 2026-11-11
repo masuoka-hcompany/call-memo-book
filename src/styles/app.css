@@ -81,6 +81,11 @@
   outline: 2px solid transparent;
   outline-offset: 0;
 }
+/* 検索欄（type="search"）の消去ボタン「×」を出さない（Chrome・Edge は青で表示し、パレットにない色になるため） */
+input[type="search"]::-webkit-search-cancel-button {
+  appearance: none;
+  display: none;
+}
 /* エラー：hover と入力中でも赤い枠を保つ（通常時の規則より後に書く） */
 .input-error,
 .input-error:hover,

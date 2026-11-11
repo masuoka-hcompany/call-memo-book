@@ -10,6 +10,7 @@ import { contacts } from "./routes/contacts.tsx";
 import { mock } from "./routes/mock.tsx";
 import { placeholder } from "./routes/placeholder.tsx";
 import { recipients } from "./routes/recipients.tsx";
+import { search } from "./routes/search.tsx";
 import { styleguide } from "./routes/styleguide.tsx";
 import type { AppEnv } from "./types.ts";
 
@@ -32,6 +33,7 @@ app.route("/", mock);
 app.use(currentUser);
 
 // 画面（作った画面のルートは placeholder より前に登録し、screens.ts の built を true にする）
+app.route("/", search);
 app.route("/", companies);
 app.route("/", contacts);
 app.route("/", recipients);
