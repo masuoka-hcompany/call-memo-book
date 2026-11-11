@@ -286,3 +286,170 @@ describe("S-07 のシード", () => {
     expect(res.headers.getSetCookie().join(";")).toContain("mock_user=2");
   });
 });
+
+// <dd data-field="x">…</dd> の中身
+function field(html: string, name: string, scope = html): string {
+  const m = new RegExp(String.raw`data-field="${name}"[^>]*>([\s\S]*?)</(dd|td)>`).exec(scope);
+  return m ? (m[1] as string).replace(/<[^>]+>/g, "").trim() : "";
+}
+
+// 取次可否の行（宛先・選んでいる値・更新者・更新日時）
+function settingRows(html: string): string[][] {
+  const table = html.split('data-table="settings"')[1]?.split("</table>")[0] ?? "";
+  const body = table.split("<tbody>")[1] ?? "";
+  return [...body.matchAll(/<tr[^>]*>([\s\S]*?)<\/tr>/g)].map((m) => {
+    const row = m[1] as string;
+    const recipient = (/<label[^>]*>([^<]*)<\/label>/.exec(row)?.[1] ?? "").trim();
+    const selected = /<option value="[^"]*" selected="">([^<]*)<\/option>/.exec(row)?.[1] ?? "";
+    return [recipient, selected, field(row, "updatedBy", row), field(row, "updatedAt", row)];
+  });
+}
+
+describe("S-06 会社詳細", () => {
+  it("AC-21 の続き：会社の情報・更新者・更新日時（日本時間・分単位）を表示する", async () => {
+    useSeed("AC-21");
+    const res = await post("/companies/new", { name: "マイナビ", kana: "まいなび", memo: "" }, "mock_user=1");
+    const cookie = res.headers
+      .getSetCookie()
+      .map((h) => h.split(";")[0])
+      .join("; ");
+    const { status, html } = await page("/companies/1", cookie);
+    expect(status).toBe(200);
+    expect(html).toContain("<title>会社詳細</title>");
+    expect(html).toContain("会社を登録しました");
+    expect(field(html, "name")).toBe("マイナビ");
+    expect(field(html, "kana")).toBe("まいなび");
+    expect(field(html, "updatedBy")).toBe("菊地");
+    expect(field(html, "updatedAt")).toMatch(/^\d{4}\/\d{2}\/\d{2} \d{2}:\d{2}$/);
+  });
+
+  it("更新日時は日本時間で表示する", async () => {
+    useSeed("AC-25");
+    for (const c of getStore().companies) c.updatedAt = "2026-11-04T15:05:00.000Z";
+    expect(field((await page("/companies/1")).html, "updatedAt")).toBe("2026/11/05 00:05");
+  });
+
+  it("「編集」「削除」「担当者を追加」ボタンと削除の確認ダイアログ", async () => {
+    useSeed("AC-25");
+    const { html } = await page("/companies/1");
+    expect(html).toMatch(/<a href="\/companies\/1\/edit" class="btn btn-plain">編集<\/a>/);
+    expect(html).toMatch(/<a href="\/companies\/1\/contacts\/new" class="btn btn-plain">担当者を追加<\/a>/);
+    expect(html).toContain(">削除</button>");
+    expect(html).toContain("この会社を削除しますか？ 所属する担当者も削除されます");
+    expect(html).toMatch(
+      /<form method="post" action="\/companies\/1\/delete"><button type="submit" class="btn btn-plain">削除する<\/button>/,
+    );
+  });
+
+  it("会社名が空の会社は、会社名の代わりによみがなを表示する", async () => {
+    replaceStore(buildDemoData());
+    expect(field((await page("/companies/7")).html, "name")).toBe("やまびこでんき");
+  });
+
+  it("担当者一覧：担当者名（空ならよみがな）と電話番号。削除された担当者は表示しない。S-08 へリンク", async () => {
+    replaceStore(buildDemoData());
+    const t5 = (await page("/companies/9")).html.split('data-table="contacts"')[1] ?? "";
+    expect(t5).toContain('<a href="/contacts/11" class="link">吉田　恵</a>');
+    expect(t5).toContain("まつもと");
+    expect(t5).toContain("0337778888");
+    // 北斗電工（4）の木下さん（15）は削除済み
+    const t4 = (await page("/companies/4")).html.split('data-table="contacts"')[1] ?? "";
+    expect(t4).toContain("渡辺　大輔");
+    expect(t4).not.toContain("木下");
+  });
+
+  it("担当者0人なら担当者の表を出さない（Q-M18）", async () => {
+    useSeed("AC-69");
+    expect((await page("/companies/1")).html).not.toContain('data-table="contacts"');
+  });
+
+  it("宛先ごとの取次可否：初期値は未設定。一度も保存していなければ更新者・更新日時は空（Q-M19）", async () => {
+    useSeed("AC-27");
+    expect(settingRows((await page("/companies/1")).html)).toEqual([
+      ["菊地", "未設定", "", ""],
+      ["社長", "未設定", "", ""],
+    ]);
+  });
+
+  it("AC-27：「つながない」にして保存すると S-06 にとどまり「取次可否を更新しました」。値・更新者・更新日時を表示する", async () => {
+    useSeed("AC-27");
+    const res = await post("/companies/1/settings", { "setting-1": "decline", "setting-2": "unset" }, "mock_user=1");
+    expect(res.status).toBe(303);
+    expect(res.headers.get("Location")).toBe("/companies/1");
+    const cookie = res.headers
+      .getSetCookie()
+      .map((h) => h.split(";")[0])
+      .join("; ");
+    const { html } = await page("/companies/1", cookie);
+    expect(html).toContain("取次可否を更新しました");
+    const [kikuchi, shacho] = settingRows(html);
+    expect(kikuchi?.slice(0, 3)).toEqual(["菊地", "つながない", "菊地"]);
+    expect(kikuchi?.[3]).toMatch(/^\d{4}\/\d{2}\/\d{2} \d{2}:\d{2}$/);
+    // 値を変えていない宛先は記録しない（仮。Q-M17）
+    expect(shacho).toEqual(["社長", "未設定", "", ""]);
+    expect(getStore().companySettings).toHaveLength(1);
+  });
+
+  it("代理で設定すると、更新者はログイン中の利用者", async () => {
+    useSeed("AC-27");
+    await post("/companies/1/settings", { "setting-2": "connect" }, "mock_user=2");
+    expect(getStore().companySettings).toEqual([
+      expect.objectContaining({ recipientId: 2, value: "connect", updatedBy: 2 }),
+    ]);
+  });
+
+  it("不正な値・知らない宛先は無視する", async () => {
+    useSeed("AC-27");
+    await post("/companies/1/settings", { "setting-1": "つなぐ", "setting-9": "decline" });
+    expect(getStore().companySettings).toHaveLength(0);
+  });
+
+  it("削除された宛先の取次可否は表示しない", async () => {
+    useSeed("AC-27");
+    getStore().recipients.push({
+      id: 3,
+      displayName: "木村",
+      email: "kimura@example.com",
+      deleted: true,
+      updatedBy: null,
+      updatedAt: null,
+    });
+    expect(settingRows((await page("/companies/1")).html).map((r) => r[0])).toEqual(["菊地", "社長"]);
+  });
+
+  it("AC-24：削除すると S-05 に戻り「会社を削除しました」。会社と担当者は論理削除、取次メモは残る", async () => {
+    useSeed("AC-24");
+    const res = await post("/companies/1/delete", {}, "mock_user=1");
+    expect(res.status).toBe(303);
+    expect(res.headers.get("Location")).toBe("/companies");
+    const cookie = res.headers
+      .getSetCookie()
+      .map((h) => h.split(";")[0])
+      .join("; ");
+    const { html } = await page("/companies", cookie);
+    expect(html).toContain("会社を削除しました");
+    expect(rows(html)).toEqual([]);
+    const s = getStore();
+    expect(s.companies[0]).toMatchObject({ deleted: true, updatedBy: 1 });
+    expect(s.contacts[0]).toMatchObject({ deleted: true, updatedBy: 1 });
+    expect(s.memos[0]).toMatchObject({ deleted: false, companyName: "マイナビ" });
+    // 削除した会社の詳細・編集は開けない
+    expect((await page("/companies/1")).status).toBe(404);
+  });
+
+  it("存在しない・削除された会社は 404", async () => {
+    replaceStore(buildDemoData());
+    expect((await page("/companies/999")).status).toBe(404);
+    expect((await page("/companies/11")).status).toBe(404);
+    expect((await post("/companies/11/settings", { "setting-1": "decline" })).status).toBe(404);
+    expect((await post("/companies/11/delete", {})).status).toBe(404);
+  });
+});
+
+describe("S-06 のシード", () => {
+  it.each(["AC-24", "AC-27", "AC-25", "AC-61", "AC-69"])("%s は菊地で S-06（会社 1）を開く", async (name) => {
+    const res = await app.request(`${BASE}/__seed/${name}`, {}, mockEnv);
+    expect(res.headers.get("Location")).toBe("/companies/1");
+    expect(res.headers.getSetCookie().join(";")).toContain("mock_user=1");
+  });
+});

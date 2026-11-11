@@ -394,6 +394,79 @@ const AC_SEEDS_S07: Seed[] = [
   },
 ];
 
+// 会社詳細（S-06）を開いた状態の AC
+const AC_SEEDS_S06: Seed[] = [
+  {
+    // 取次メモの項目は Given にないため、宛先「菊地」・用件「伝言希望」・作成者「菊地」とする
+    name: "AC-24",
+    description:
+      "AC-24 会社を削除する：会社「マイナビ」に担当者「原田」、マイナビに紐づく取次メモ1件、S-06 会社詳細（マイナビ）を開く",
+    build: withDefault({
+      companies: [acCompany(1, "マイナビ", "まいなび")],
+      contacts: [acContact(1, 1, "原田", "はらだ", "0312345678")],
+      memos: [
+        {
+          id: 1,
+          recipientId: RECIPIENT_KIKUCHI_ID,
+          receivedAt: jst(2026, 11, 5, 14, 30),
+          companyName: "マイナビ",
+          personName: "原田",
+          phone: "0312345678",
+          companyId: 1,
+          contactId: 1,
+          purpose: "message",
+          message: "",
+          note: "",
+          status: "open",
+          doneBy: null,
+          doneAt: null,
+          createdBy: USER_KIKUCHI.id,
+          createdAt: jst(2026, 11, 5, 14, 32),
+          deleted: false,
+          updatedBy: USER_KIKUCHI.id,
+          updatedAt: jst(2026, 11, 5, 14, 32),
+        },
+      ],
+    }),
+    loginEmail: USER_KIKUCHI.email,
+    redirect: "/companies/1",
+  },
+  {
+    name: "AC-27",
+    description:
+      "AC-27 会社単位の取次可否を設定する：菊地でログイン、会社「ミイダス」（宛先「菊地」は未設定）、S-06 会社詳細（ミイダス）を開く",
+    build: withDefault({ companies: [acCompany(1, "ミイダス", "みいだす")] }),
+    loginEmail: USER_KIKUCHI.email,
+    redirect: "/companies/1",
+  },
+  {
+    name: "AC-25",
+    description: "AC-25 担当者を登録する：会社「マイナビ」、S-06 会社詳細（マイナビ）を開く",
+    build: withDefault({ companies: [acCompany(1, "マイナビ", "まいなび")] }),
+    loginEmail: USER_KIKUCHI.email,
+    redirect: "/companies/1",
+  },
+  {
+    name: "AC-61",
+    description:
+      "AC-61 同じ電話番号の担当者を登録できる：会社「マイナビ」に担当者「原田」（0312345678）、S-06 会社詳細（マイナビ）を開く",
+    build: withDefault({
+      companies: [acCompany(1, "マイナビ", "まいなび")],
+      contacts: [acContact(1, 1, "原田", "はらだ", "0312345678")],
+    }),
+    loginEmail: USER_KIKUCHI.email,
+    redirect: "/companies/1",
+  },
+  {
+    name: "AC-69",
+    description:
+      "AC-69 担当者名を空にしてよみがなだけで登録できる：会社「マイナビ」（担当者0人）、S-06 会社詳細（マイナビ）を開く",
+    build: withDefault({ companies: [acCompany(1, "マイナビ", "まいなび")] }),
+    loginEmail: USER_KIKUCHI.email,
+    redirect: "/companies/1",
+  },
+];
+
 // ---------- シードの一覧（/__seed） ----------
 
 export type Seed = {
@@ -427,6 +500,7 @@ export const SEEDS: Seed[] = [
   // AC ごとのシード（/__seed/AC-xx）。その AC の画面を作るときに足す
   ...AC_SEEDS_S05,
   ...AC_SEEDS_S07,
+  ...AC_SEEDS_S06,
 ];
 
 export function findSeed(name: string): Seed | undefined {

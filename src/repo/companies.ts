@@ -1,6 +1,6 @@
 // 会社のデータアクセス（後で D1 に差し替える。D1 と同じく Promise を返す）
 // 削除済みの会社は既定で除外する。削除済みも含めて取る関数は名前に IncludingDeleted を付ける。
-// 入力チェックは src/domain/company.ts で済ませてから呼ぶ。削除は S-06 を作るときに足す。
+// 入力チェックは src/domain/company.ts で済ませてから呼ぶ。
 
 import { compareByKana, matchesCompanyKeyword } from "../domain/company.ts";
 import { getStore, nextId } from "../mock/store.ts";
@@ -50,4 +50,20 @@ export async function updateCompany(id: Id, values: CompanyValues, updatedBy: Id
   if (!company) return null;
   Object.assign(company, values, { updatedBy, updatedAt: now.toISOString() });
   return { ...company };
+}
+
+// 削除する（論理削除）。所属する担当者もあわせて論理削除する。紐づく取次メモはそのまま残す。
+// 会社・担当者それぞれに更新者・更新日時を記録する。削除済み・存在しない会社なら false
+export async function deleteCompany(id: Id, updatedBy: Id, now: Date): Promise<boolean> {
+  const { companies, contacts } = getStore();
+  const company = companies.find((c) => c.id === id && !c.deleted);
+  if (!company) return false;
+  const updatedAt = now.toISOString();
+  Object.assign(company, { deleted: true, updatedBy, updatedAt });
+  for (const contact of contacts) {
+    if (contact.companyId === id && !contact.deleted) {
+      Object.assign(contact, { deleted: true, updatedBy, updatedAt });
+    }
+  }
+  return true;
 }

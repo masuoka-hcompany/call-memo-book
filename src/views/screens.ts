@@ -38,7 +38,7 @@ export const SCREENS: Screen[] = [
     paths: ["/companies/new", "/companies/:id{[0-9]+}/edit"],
     built: true,
   },
-  { id: "S-06", name: "会社詳細", nav: "companies", paths: ["/companies/:id{[0-9]+}"] },
+  { id: "S-06", name: "会社詳細", nav: "companies", paths: ["/companies/:id{[0-9]+}"], built: true },
   {
     id: "S-09",
     name: "担当者登録・編集",

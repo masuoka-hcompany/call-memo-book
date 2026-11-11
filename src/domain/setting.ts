@@ -14,6 +14,23 @@ export function isSettingValue(value: unknown): value is SettingValue {
   return typeof value === "string" && (SETTING_VALUES as readonly string[]).includes(value);
 }
 
+export type SettingChange = { recipientId: number; value: SettingValue };
+
+// 「保存」で記録する取次可否：送られた値のうち、いまの値と違う宛先だけ（値を変えていない宛先の更新者・更新日時は変えない。
+// 仮。docs/questions.md Q-M17）。いまの値がない宛先は「未設定」とみなす。
+// current にない宛先（削除された宛先など）の値は無視する。
+export function settingChanges(
+  current: ReadonlyMap<number, SettingValue>,
+  submitted: ReadonlyMap<number, SettingValue>,
+): SettingChange[] {
+  const changes: SettingChange[] = [];
+  for (const [recipientId, value] of submitted) {
+    if (!current.has(recipientId)) continue;
+    if (current.get(recipientId) !== value) changes.push({ recipientId, value });
+  }
+  return changes;
+}
+
 export type ResolvedSetting = {
   // 採用される値
   value: SettingValue;

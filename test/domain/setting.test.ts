@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { isSettingValue, resolveSetting, SETTING_LABELS, type SettingValue } from "../../src/domain/setting.ts";
+import {
+  isSettingValue,
+  resolveSetting,
+  SETTING_LABELS,
+  type SettingValue,
+  settingChanges,
+} from "../../src/domain/setting.ts";
 
 describe("SETTING_LABELS（画面の表記）", () => {
   it("つなぐ／つながない／未設定", () => {
@@ -40,5 +46,37 @@ describe("isSettingValue", () => {
     expect(isSettingValue("unset")).toBe(true);
     expect(isSettingValue("つなぐ")).toBe(false);
     expect(isSettingValue(undefined)).toBe(false);
+  });
+});
+
+describe("settingChanges（保存で記録する取次可否。Q-M17）", () => {
+  const map = (entries: [number, SettingValue][]) => new Map(entries);
+
+  it("値を変えた宛先だけを返す", () => {
+    const current = map([
+      [1, "unset"],
+      [2, "connect"],
+    ]);
+    const submitted = map([
+      [1, "decline"],
+      [2, "connect"],
+    ]);
+    expect(settingChanges(current, submitted)).toEqual([{ recipientId: 1, value: "decline" }]);
+  });
+
+  it("AC-27：宛先「菊地」を未設定から「つながない」に", () => {
+    expect(settingChanges(map([[1, "unset"]]), map([[1, "decline"]]))).toEqual([{ recipientId: 1, value: "decline" }]);
+  });
+
+  it("「未設定」に戻すのも変更として返す", () => {
+    expect(settingChanges(map([[1, "connect"]]), map([[1, "unset"]]))).toEqual([{ recipientId: 1, value: "unset" }]);
+  });
+
+  it("何も変えなければ空", () => {
+    expect(settingChanges(map([[1, "connect"]]), map([[1, "connect"]]))).toEqual([]);
+  });
+
+  it("いまの宛先にない ID（削除された宛先など）は無視する", () => {
+    expect(settingChanges(map([[1, "unset"]]), map([[9, "decline"]]))).toEqual([]);
   });
 });
