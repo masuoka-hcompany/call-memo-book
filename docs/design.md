@@ -140,7 +140,7 @@
 |---|---|
 | ヘッダー（メニュー・ログイン中の利用者名・ログインユーザー切替）、画面の見出し、完了メッセージの位置 | `src/views/AppLayout.tsx`（画面は `src/routes/page.tsx` の `renderPage` で返す） |
 | 完了メッセージ、「削除」ボタンと確認ダイアログ、【未決】バッジ、モック専用の枠 | `src/views/components.tsx`（`FlashMessage`・`DeleteButton`・`PendingBadge`・`MockBox`） |
-| 入力欄（項目名・入力欄・エラーメッセージ。4.2・4.3） | `src/views/components.tsx`（1行：`TextField`、複数行：`TextAreaField`）。幅は `max-w-xl` |
+| 入力欄（項目名・入力欄・エラーメッセージ。4.2・4.3） | `src/views/components.tsx`（1行：`TextField`、複数行：`TextAreaField`、プルダウン：`SelectField`。プルダウンは先頭に空の選択肢を置く）。幅は `max-w-xl` |
 | 宛先ごとの取次可否の表と「保存」ボタン（S-06・S-08） | `src/views/SettingsSection.tsx`（`SettingsSection`）。送られた値の読み取りは `src/routes/settings-form.ts` |
 | 完了メッセージ・確認ダイアログ・「保存」ボタンの文言 | `src/views/messages.ts` |
 

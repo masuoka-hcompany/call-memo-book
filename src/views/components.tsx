@@ -105,6 +105,33 @@ export function TextAreaField({ name, label, value, errors, rows = 4 }: FieldPro
   );
 }
 
+// プルダウン。先頭に空の選択肢（未選択）を置く。value はいま選んでいる値（未選択なら ""）
+export function SelectField({
+  name,
+  label,
+  value,
+  options,
+  errors,
+}: FieldProps & { options: { value: string; label: string }[] }) {
+  const f = fieldAttrs(name, errors);
+  return (
+    <div class="mb-5">
+      <label for={f.id} class="mb-1 block text-sm">
+        {label}
+      </label>
+      <select id={f.id} name={name} class={`select w-full max-w-xl ${f.hasError ? "select-error" : ""}`} {...f.aria}>
+        <option value="" selected={value === ""} />
+        {options.map((o) => (
+          <option value={o.value} selected={o.value === value}>
+            {o.label}
+          </option>
+        ))}
+      </select>
+      {f.hasError && <FieldErrors id={f.errorId} errors={errors as string[]} />}
+    </div>
+  );
+}
+
 type DeleteTarget = keyof typeof CONFIRM_DELETE_MESSAGES;
 
 // 「削除」ボタンと削除の確認ダイアログ（design.md 4.9）
