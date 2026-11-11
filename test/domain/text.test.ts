@@ -33,13 +33,23 @@ describe("normalizeNewlines", () => {
 });
 
 describe("isEmpty（空の判定）", () => {
-  it("空文字だけを空とみなす", () => {
+  it("空文字は空", () => {
     expect(isEmpty("")).toBe(true);
   });
 
-  it("空白だけの入力は空とみなさない（仮。Q-M07）", () => {
-    expect(isEmpty(" ")).toBe(false);
-    expect(isEmpty("　")).toBe(false);
+  it("半角・全角スペースだけの入力も空とみなす（Q-M07）", () => {
+    expect(isEmpty(" ")).toBe(true);
+    expect(isEmpty("　")).toBe(true);
+    expect(isEmpty(" 　 　")).toBe(true);
+  });
+
+  it("スペース以外の文字があれば空ではない", () => {
+    expect(isEmpty("　あ　")).toBe(false);
+  });
+
+  it("タブ・改行だけの入力は空とみなさない（決まっていない。Q-M07）", () => {
+    expect(isEmpty("\t")).toBe(false);
+    expect(isEmpty("\r\n")).toBe(false);
   });
 });
 
@@ -60,7 +70,8 @@ describe("displayName（名前が空ならよみがな）", () => {
     expect(displayName("", "みいだす")).toBe("みいだす");
   });
 
-  it("空白だけの名前は空とみなさない（仮。Q-M07）", () => {
-    expect(displayName("　", "みいだす")).toBe("　");
+  it("スペースだけの名前は空とみなし、よみがなを表示する（Q-M07）", () => {
+    expect(displayName("　", "みいだす")).toBe("みいだす");
+    expect(displayName(" ", "みいだす")).toBe("みいだす");
   });
 });

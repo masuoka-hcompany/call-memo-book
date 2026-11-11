@@ -72,6 +72,7 @@
 - エラーの欄に `input-error`（`select-error`・`textarea-error`）と `aria-invalid="true"` を付ける。枠を赤にする
 - hover や入力中でも赤い枠を保つ（入力中は赤の 2px の単線）
 - エラーメッセージは入力欄のすぐ下に `error-text` で表示する（赤の文字、`text-sm`）。文言は仕様書のとおり
+- 1つの欄に複数のエラーがあるときは、すべてを1行ずつ並べる（`docs/questions.md` Q-M09）
 - エラーの欄とメッセージは `aria-describedby` でつなぐ
 
 ### 4.4 disabled

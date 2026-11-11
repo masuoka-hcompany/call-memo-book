@@ -48,22 +48,24 @@ describe("デモデータ（/__seed/demo）", () => {
 
   it("会社・担当者は入力チェックを通る値", () => {
     for (const c of d.companies) {
-      expect(validateText(c.name, { label: "会社名", max: NAME_MAX })).toBeNull();
-      expect(validateText(c.kana, { label: "会社名のよみがな", required: true, max: NAME_MAX, kana: true })).toBeNull();
+      expect(validateText(c.name, { label: "会社名", max: NAME_MAX })).toEqual([]);
+      expect(validateText(c.kana, { label: "会社名のよみがな", required: true, max: NAME_MAX, kana: true })).toEqual(
+        [],
+      );
     }
     for (const p of d.contacts) {
-      expect(
-        validateText(p.kana, { label: "担当者名のよみがな", required: true, max: NAME_MAX, kana: true }),
-      ).toBeNull();
-      expect(validatePhone(p.phone, requiredMessage("電話番号"))).toBeNull();
+      expect(validateText(p.kana, { label: "担当者名のよみがな", required: true, max: NAME_MAX, kana: true })).toEqual(
+        [],
+      );
+      expect(validatePhone(p.phone, requiredMessage("電話番号"))).toEqual([]);
     }
   });
 
   it("取次メモは入力チェックを通る値で、対処済みには対処した人と日時がある", () => {
     for (const m of d.memos) {
-      expect(validateText(m.companyName, { label: "会社名", required: true, max: NAME_MAX })).toBeNull();
-      expect(validateText(m.message, { label: "伝言", max: LONG_TEXT_MAX })).toBeNull();
-      expect(validatePhone(m.phone, m.purpose === "callback" ? CALLBACK_PHONE_REQUIRED_MESSAGE : null)).toBeNull();
+      expect(validateText(m.companyName, { label: "会社名", required: true, max: NAME_MAX })).toEqual([]);
+      expect(validateText(m.message, { label: "伝言", max: LONG_TEXT_MAX })).toEqual([]);
+      expect(validatePhone(m.phone, m.purpose === "callback" ? CALLBACK_PHONE_REQUIRED_MESSAGE : null)).toEqual([]);
       if (m.status === "done") {
         expect(m.doneBy).not.toBeNull();
         expect(m.doneAt).not.toBeNull();
