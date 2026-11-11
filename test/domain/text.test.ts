@@ -47,9 +47,14 @@ describe("isEmpty（空の判定）", () => {
     expect(isEmpty("　あ　")).toBe(false);
   });
 
-  it("タブ・改行だけの入力は空とみなさない（決まっていない。Q-M07）", () => {
-    expect(isEmpty("\t")).toBe(false);
-    expect(isEmpty("\r\n")).toBe(false);
+  it("タブ・改行だけの入力も空とみなす（Q-M07）", () => {
+    expect(isEmpty("\t")).toBe(true);
+    expect(isEmpty("\r\n")).toBe(true);
+    expect(isEmpty("\n\n　\t ")).toBe(true);
+  });
+
+  it("改行をはさんで文字があれば空ではない", () => {
+    expect(isEmpty("\nあ\n")).toBe(false);
   });
 });
 

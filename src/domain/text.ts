@@ -11,11 +11,11 @@ export function countChars(value: string): number {
   return [...normalizeNewlines(value)].length;
 }
 
-// 入力が空か。空文字と、半角・全角スペースだけの入力を空とみなす（docs/questions.md Q-M07。2026-11-11 決定）。
+// 入力が空か。空文字と、空白（半角・全角スペース、タブ、改行など）だけの入力を空とみなす
+// （docs/questions.md Q-M07。2026-11-11 決定）。JS の \s は全角スペース U+3000 も含む。
 // 前後の空白は削らない（空でなければ入力どおりに保存する）。
-// タブ・改行だけの入力は空とみなさない（決まっていないため。Q-M07 に記録）。
 export function isEmpty(value: string): boolean {
-  return /^[ 　]*$/u.test(value);
+  return /^\s*$/u.test(value);
 }
 
 // 数値をカンマ区切りで表示する（例：1000 → "1,000"）
