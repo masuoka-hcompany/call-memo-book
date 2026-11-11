@@ -805,6 +805,35 @@ const AC_SEEDS_S02: Seed[] = [
   ),
 ];
 
+// 取次メモ詳細（S-03）を開いた状態の AC：取次メモ1件（ID 1）。Given に書かれていない項目は acMemo のとおり
+// （宛先「菊地」、会社名「会社①」、用件「伝言希望」、作成者「菊地」）
+const DONE_BY_KIKUCHI = { status: "done", doneBy: USER_KIKUCHI.id, doneAt: jst(2026, 11, 5, 11, 0) } as const;
+
+function s03Seed(name: string, title: string, memo: Memo, login: User = USER_KIKUCHI): Seed {
+  return {
+    name,
+    description: `${name} ${title}：${login.name}でログイン、S-03 取次メモ詳細を開く`,
+    build: withDefault({ memos: [memo] }),
+    loginEmail: login.email,
+    redirect: "/memos/1",
+  };
+}
+
+const AC_SEEDS_S03: Seed[] = [
+  s03Seed("AC-15", "作成者が取次メモを編集する（菊地が作成、用件「伝言希望」）", acMemo(1)),
+  s03Seed("AC-16", "作成者が取次メモを削除する（菊地が作成）", acMemo(1)),
+  s03Seed("AC-62", "作成者以外でも取次メモを編集できる（菊地が作成、用件「伝言希望」）", acMemo(1), USER_MASUOKA),
+  s03Seed("AC-18", "宛先本人が対処済みにする（宛先「菊地」・未対処）", acMemo(1)),
+  s03Seed("AC-19", "宛先本人が未対処に戻す（宛先「菊地」・対処済み）", acMemo(1, DONE_BY_KIKUCHI)),
+  s03Seed("AC-53", "対処済みにした人と日時が記録される（宛先「菊地」・未対処）", acMemo(1)),
+  s03Seed(
+    "AC-54",
+    "未対処に戻すと対処済みにした人と日時が消える（宛先「菊地」・対処済み。菊地が 2026/11/05 11:00 に対処済みにした）",
+    acMemo(1, DONE_BY_KIKUCHI),
+  ),
+  s03Seed("AC-63", "宛先本人以外でも対処済みにできる（宛先「菊地」・未対処）", acMemo(1), USER_MASUOKA),
+];
+
 // ---------- シードの一覧（/__seed） ----------
 
 export type Seed = {
@@ -839,6 +868,7 @@ export const SEEDS: Seed[] = [
   ...AC_SEEDS_S01,
   ...AC_SEEDS_S04,
   ...AC_SEEDS_S02,
+  ...AC_SEEDS_S03,
   ...AC_SEEDS_S05,
   ...AC_SEEDS_S07,
   ...AC_SEEDS_S06,

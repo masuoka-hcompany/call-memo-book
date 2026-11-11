@@ -35,7 +35,7 @@ export const SCREENS: Screen[] = [
     paths: ["/memos/new", "/memos/:id{[0-9]+}/edit"],
     built: true,
   },
-  { id: "S-03", name: "取次メモ詳細", nav: "memos", paths: ["/memos/:id{[0-9]+}"] },
+  { id: "S-03", name: "取次メモ詳細", nav: "memos", paths: ["/memos/:id{[0-9]+}"], built: true },
   { id: "S-05", name: "会社一覧", nav: "companies", paths: ["/companies"], built: true },
   {
     id: "S-07",

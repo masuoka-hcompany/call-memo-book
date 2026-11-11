@@ -108,3 +108,18 @@ export function validateMemoInput(input: MemoInput, recipientIds: number[]): Mem
     },
   };
 }
+
+// ---------- S-03 対処済み・未対処の切り替え（F-05） ----------
+
+export type MemoStatusFields = { status: MemoStatus; doneBy: number | null; doneAt: string | null };
+
+// 状態を切り替えたあとの値。
+// - 対処済みにする：対処済みにした人と日時を記録する。未対処に戻す：消す（F-05・AC-53・AC-54）
+// - 既にその状態なら何も変えない（対処済みにした人・日時を上書きしない。仮。docs/questions.md Q-M33）
+// - 更新者・更新日時は変えない（F-05 は「対処済みにした人と日時」の記録だけを定める。仮。Q-M33）
+export function changeMemoStatus(current: MemoStatusFields, to: MemoStatus, by: number, now: Date): MemoStatusFields {
+  if (current.status === to) return { ...current };
+  return to === "done"
+    ? { status: "done", doneBy: by, doneAt: now.toISOString() }
+    : { status: "open", doneBy: null, doneAt: null };
+}

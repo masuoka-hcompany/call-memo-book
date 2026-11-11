@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { MEMO_FIELD_LABELS, type MemoInput, validateMemoInput } from "../../src/domain/memo.ts";
+import { changeMemoStatus, MEMO_FIELD_LABELS, type MemoInput, validateMemoInput } from "../../src/domain/memo.ts";
 
 const RECIPIENTS = [1, 2];
 const empty: MemoInput = {
@@ -184,5 +184,32 @@ describe("validateMemoInput（S-04 の入力チェック）", () => {
     const input = base({ companyName: " ", message: "伝言" });
     const r = validateMemoInput(input, RECIPIENTS);
     expect(!r.ok && r.input).toEqual(input);
+  });
+});
+
+describe("changeMemoStatus（F-05 対処済み・未対処の切り替え）", () => {
+  const now = new Date("2026-11-05T05:30:00.000Z");
+  const open = { status: "open", doneBy: null, doneAt: null } as const;
+  const done = { status: "done", doneBy: 1, doneAt: "2026-11-05T02:00:00.000Z" } as const;
+
+  it("AC-18・AC-53：対処済みにすると、対処済みにした人と押した日時を記録する", () => {
+    expect(changeMemoStatus(open, "done", 1, now)).toEqual({
+      status: "done",
+      doneBy: 1,
+      doneAt: "2026-11-05T05:30:00.000Z",
+    });
+  });
+
+  it("AC-63：宛先本人以外（益岡）でも対処済みにでき、益岡を記録する", () => {
+    expect(changeMemoStatus(open, "done", 2, now)).toMatchObject({ status: "done", doneBy: 2 });
+  });
+
+  it("AC-19・AC-54：未対処に戻すと、対処済みにした人と日時を消す", () => {
+    expect(changeMemoStatus(done, "open", 2, now)).toEqual({ status: "open", doneBy: null, doneAt: null });
+  });
+
+  it("既にその状態なら何も変えない（対処済みにした人・日時を上書きしない。仮。Q-M33）", () => {
+    expect(changeMemoStatus(done, "done", 2, now)).toEqual(done);
+    expect(changeMemoStatus(open, "open", 2, now)).toEqual(open);
   });
 });

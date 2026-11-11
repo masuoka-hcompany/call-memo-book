@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 import app from "../src/index.tsx";
 import { buildDemoData } from "../src/mock/seeds.ts";
 import { replaceStore } from "../src/mock/store.ts";
+import { SCREENS } from "../src/views/screens.ts";
 
 const BASE = "http://localhost:8787";
 const mockEnv = { ...env, ENVIRONMENT: "local", MOCK_MODE: "true" };
@@ -65,13 +66,11 @@ describe("レイアウト", () => {
     expect(html).toMatch(/href="\/companies" class="nav-item[^"]*" aria-current="page"/);
   });
 
-  it("まだ作っていない画面は仮のページを表示する", async () => {
+  it("すべての画面を作ったので、仮のページは出さない", async () => {
+    expect(SCREENS.filter((s) => !s.built).map((s) => s.id)).toEqual([]);
     const res = await get("/memos/1");
     expect(res.status).toBe(200);
-    const html = await res.text();
-    expect(html).toContain("<h1");
-    expect(html).toContain("取次メモ詳細");
-    expect(html).toContain("モック用：この画面はまだ作っていません（S-03）");
+    expect(await res.text()).not.toContain("モック用：この画面はまだ作っていません");
   });
 
   it("MOCK_MODE でなければログインユーザー切替を出さず、Access のユーザーで利用者を探す", async () => {

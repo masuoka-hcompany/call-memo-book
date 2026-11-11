@@ -1,8 +1,7 @@
 // 取次メモのデータアクセス（後で D1 に差し替える。D1 と同じく Promise を返す）
 // 削除済みの取次メモは既定で除外する。入力チェックは src/domain/memo.ts で済ませてから呼ぶ。
-// 対処済みの切り替え・削除は S-03 を作るときに足す。
 
-import type { MemoValues } from "../domain/memo.ts";
+import { changeMemoStatus, type MemoStatus, type MemoValues } from "../domain/memo.ts";
 import { getStore, nextId } from "../mock/store.ts";
 import type { Id, Memo } from "./types.ts";
 
@@ -65,5 +64,21 @@ export async function updateMemo(id: Id, values: MemoValues, updatedBy: Id, now:
   const memo = getStore().memos.find((m) => m.id === id && !m.deleted);
   if (!memo) return null;
   Object.assign(memo, fields(values), { updatedBy, updatedAt: now.toISOString() });
+  return { ...memo };
+}
+
+// 状態を切り替える（ルールは src/domain/memo.ts の changeMemoStatus）。削除済み・存在しない取次メモなら null
+export async function setMemoStatus(id: Id, to: MemoStatus, by: Id, now: Date): Promise<Memo | null> {
+  const memo = getStore().memos.find((m) => m.id === id && !m.deleted);
+  if (!memo) return null;
+  Object.assign(memo, changeMemoStatus(memo, to, by, now));
+  return { ...memo };
+}
+
+// 削除する（論理削除）。更新者・更新日時を記録する。削除済み・存在しない取次メモなら null
+export async function deleteMemo(id: Id, updatedBy: Id, now: Date): Promise<Memo | null> {
+  const memo = getStore().memos.find((m) => m.id === id && !m.deleted);
+  if (!memo) return null;
+  Object.assign(memo, { deleted: true, updatedBy, updatedAt: now.toISOString() });
   return { ...memo };
 }

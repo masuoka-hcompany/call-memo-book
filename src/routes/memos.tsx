@@ -1,4 +1,4 @@
-// 取次メモの画面（S-02 取次メモ一覧、S-04 取次メモ作成・編集）
+// 取次メモの画面（S-02 取次メモ一覧、S-03 取次メモ詳細、S-04 取次メモ作成・編集）
 
 import { type Context, Hono } from "hono";
 import { toJstDateTimeLocal } from "../domain/datetime.ts";
@@ -13,10 +13,11 @@ import {
 import { displayName } from "../domain/text.ts";
 import { findCompany } from "../repo/companies.ts";
 import { findContact } from "../repo/contacts.ts";
-import { createMemo, findMemo, listMemos, updateMemo } from "../repo/memos.ts";
+import { createMemo, deleteMemo, findMemo, listMemos, setMemoStatus, updateMemo } from "../repo/memos.ts";
 import { listRecipients, listRecipientsIncludingDeleted } from "../repo/recipients.ts";
-import { listUsers } from "../repo/users.ts";
+import { findUserById, listUsers } from "../repo/users.ts";
 import type { AppEnv } from "../types.ts";
+import { MemoDetailPage } from "../views/MemoDetailPage.tsx";
 import { MemoFormPage } from "../views/MemoFormPage.tsx";
 import { MemoListPage } from "../views/MemoListPage.tsx";
 import { screen } from "../views/screens.ts";
@@ -169,4 +170,39 @@ memos.get("/memos", async (c) => {
       />
     ),
   });
+});
+
+// ---------- 詳細 ----------
+
+// S-03 取次メモ詳細。削除された・存在しない取次メモは 404
+memos.get(`/memos/${ID}`, async (c) => {
+  const memo = await findMemo(Number(c.req.param("id")));
+  if (!memo) return c.notFound();
+  const recipient = (await listRecipientsIncludingDeleted()).find((r) => r.id === memo.recipientId) ?? null;
+  const s = screen("S-03");
+  return renderPage(c, {
+    title: s.name,
+    nav: s.nav,
+    children: <MemoDetailPage memo={memo} recipient={recipient} creator={await findUserById(memo.createdBy)} />,
+  });
+});
+
+// 対処済みにする／未対処に戻す：S-03 にとどまり「対処済みにしました」／「未対処に戻しました」（F-05）
+for (const [path, to, flash] of [
+  ["done", "done", "memoDone"],
+  ["reopen", "open", "memoReopened"],
+] as const) {
+  memos.post(`/memos/${ID}/${path}`, async (c) => {
+    const id = Number(c.req.param("id"));
+    if (!(await setMemoStatus(id, to, c.var.currentUser.id, new Date()))) return c.notFound();
+    setFlash(c, flash);
+    return c.redirect(`/memos/${id}`, 303);
+  });
+}
+
+// 削除：S-02 取次メモ一覧に戻り「取次メモを削除しました」（F-04）
+memos.post(`/memos/${ID}/delete`, async (c) => {
+  if (!(await deleteMemo(Number(c.req.param("id")), c.var.currentUser.id, new Date()))) return c.notFound();
+  setFlash(c, "memoDeleted");
+  return c.redirect("/memos", 303);
 });
