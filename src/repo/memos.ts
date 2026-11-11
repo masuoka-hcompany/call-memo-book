@@ -1,10 +1,17 @@
 // 取次メモのデータアクセス（後で D1 に差し替える。D1 と同じく Promise を返す）
 // 削除済みの取次メモは既定で除外する。入力チェックは src/domain/memo.ts で済ませてから呼ぶ。
-// 一覧・対処済みの切り替え・削除は S-02・S-03 を作るときに足す。
+// 対処済みの切り替え・削除は S-03 を作るときに足す。
 
 import type { MemoValues } from "../domain/memo.ts";
 import { getStore, nextId } from "../mock/store.ts";
 import type { Id, Memo } from "./types.ts";
+
+// 削除されていない取次メモすべて（絞り込み・並び順は src/domain/memo-list.ts）
+export async function listMemos(): Promise<Memo[]> {
+  return getStore()
+    .memos.filter((m) => !m.deleted)
+    .map((m) => ({ ...m }));
+}
 
 export async function findMemo(id: Id): Promise<Memo | null> {
   const memo = getStore().memos.find((m) => m.id === id && !m.deleted);

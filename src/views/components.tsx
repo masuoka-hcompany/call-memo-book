@@ -1,6 +1,7 @@
 // 複数の画面で使う部品（見た目のルールは docs/design.md、見本は /__styleguide）
 
 import type { Child } from "hono/jsx";
+import { MEMO_STATUS_LABELS, type MemoStatus } from "../domain/memo.ts";
 import { LABELS } from "./labels.ts";
 import { CONFIRM_DELETE_MESSAGES, DELETE_CONFIRM_LABEL, DELETE_LABEL } from "./messages.ts";
 
@@ -194,5 +195,14 @@ export function DeleteDialogBody({
         </form>
       </div>
     </>
+  );
+}
+
+// 取次メモの状態（design.md 4.8）：「● 未対処」（黒の太字）／「✓ 対処済み」（補助グレー）
+export function MemoStatusLabel({ status }: { status: MemoStatus }) {
+  return status === "open" ? (
+    <span class="status-open">● {MEMO_STATUS_LABELS.open}</span>
+  ) : (
+    <span class="status-done">✓ {MEMO_STATUS_LABELS.done}</span>
   );
 }

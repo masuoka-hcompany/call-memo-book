@@ -27,7 +27,7 @@ export type Screen = {
 
 export const SCREENS: Screen[] = [
   { id: "S-01", name: "相手検索", nav: "search", paths: ["/"], built: true },
-  { id: "S-02", name: "取次メモ一覧", nav: "memos", paths: ["/memos"] },
+  { id: "S-02", name: "取次メモ一覧", nav: "memos", paths: ["/memos"], built: true },
   {
     id: "S-04",
     name: "取次メモ作成・編集",

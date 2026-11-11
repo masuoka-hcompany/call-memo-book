@@ -10,7 +10,14 @@ import { mockOnly } from "../mock/mode.ts";
 import { listUsers } from "../repo/users.ts";
 import type { AppEnv } from "../types.ts";
 import { AppHeader } from "../views/AppLayout.tsx";
-import { DeleteButton, DeleteDialogBody, FlashMessage, MockBox, PendingBadge } from "../views/components.tsx";
+import {
+  DeleteButton,
+  DeleteDialogBody,
+  FlashMessage,
+  MemoStatusLabel,
+  MockBox,
+  PendingBadge,
+} from "../views/components.tsx";
 import { Document } from "../views/Document.tsx";
 import { LABELS, MOCK_LABELS } from "../views/labels.ts";
 import { FLASH_MESSAGES } from "../views/messages.ts";
@@ -280,8 +287,8 @@ styleguide.get("/__styleguide", async (c) => {
 
         <Section id="status" title="取次メモの状態">
           <p class="flex gap-8">
-            <span class="status-open">● 未対処</span>
-            <span class="status-done">✓ 対処済み</span>
+            <MemoStatusLabel status="open" />
+            <MemoStatusLabel status="done" />
           </p>
         </Section>
 

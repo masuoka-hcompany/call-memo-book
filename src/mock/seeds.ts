@@ -726,6 +726,85 @@ const AC_SEEDS_S04: Seed[] = [
   s04Seed("AC-65", "電話番号が15桁なら保存できる"),
 ];
 
+// 取次メモ一覧（S-02）に関わる AC：菊地でログイン、S-02 取次メモ一覧を開く。
+// Given に書かれていない項目は、宛先「菊地」、用件「伝言希望」、状態「未対処」、作成者「菊地」、
+// 受電日時は 2026/11/05 10:00 から1分ずつさかのぼる。取次メモを見分けるため、会社名を「会社①」などにする。
+function acMemo(id: Id, values: Partial<Memo> = {}): Memo {
+  const receivedAt = values.receivedAt ?? jst(2026, 11, 5, 10, -(id - 1));
+  return {
+    id,
+    recipientId: RECIPIENT_KIKUCHI_ID,
+    receivedAt,
+    companyName: `会社${"①②③④⑤".charAt(id - 1)}`,
+    personName: "",
+    phone: "",
+    companyId: null,
+    contactId: null,
+    purpose: "message",
+    message: "",
+    note: "",
+    status: "open",
+    doneBy: null,
+    doneAt: null,
+    createdBy: USER_KIKUCHI.id,
+    createdAt: receivedAt,
+    deleted: false,
+    updatedBy: USER_KIKUCHI.id,
+    updatedAt: receivedAt,
+    ...values,
+  };
+}
+
+const s02Seed = (name: string, title: string, memos: Memo[], add: Partial<StoreData> = {}): Seed =>
+  s01Seed(name, `${name} ${title}：S-02 取次メモ一覧を開く`, { ...add, memos }, "/memos");
+
+const AC_SEEDS_S02: Seed[] = [
+  s02Seed("AC-11", "自分宛て・未対処で絞り込む（①菊地・未対処、②菊地・対処済み、③社長・未対処）", [
+    acMemo(1),
+    acMemo(2, { status: "done", doneBy: USER_KIKUCHI.id, doneAt: jst(2026, 11, 5, 11, 0) }),
+    acMemo(3, { recipientId: RECIPIENT_SHACHO_ID }),
+  ]),
+  s02Seed("AC-12", "キーワードで検索する（①「見積書を送付しました」、②「来週の打ち合わせの件」）", [
+    acMemo(1, { message: "見積書を送付しました" }),
+    acMemo(2, { message: "来週の打ち合わせの件" }),
+  ]),
+  s02Seed("AC-13", "取次メモが1件もない", []),
+  s02Seed("AC-14", "条件に一致する取次メモがない（伝言「見積書を送付しました」の1件）", [
+    acMemo(1, { message: "見積書を送付しました" }),
+  ]),
+  s02Seed(
+    "AC-38",
+    "1ページの表示件数（51件。会社01が最も新しく、会社51が最も古い）",
+    Array.from({ length: 51 }, (_, i) =>
+      acMemo(i + 1, { companyName: `会社${String(i + 1).padStart(2, "0")}`, receivedAt: jst(2026, 11, 5, 10, -i) }),
+    ),
+  ),
+  s02Seed("AC-52", "受電日時の期間で絞り込む（①11/01 10:00、②11/03 10:00、③11/05 10:00）", [
+    acMemo(1, { receivedAt: jst(2026, 11, 1, 10, 0) }),
+    acMemo(2, { receivedAt: jst(2026, 11, 3, 10, 0) }),
+    acMemo(3, { receivedAt: jst(2026, 11, 5, 10, 0) }),
+  ]),
+  // 作成時の電話番号は 0312345678。そのあと担当者の電話番号を 09012345678 に編集した
+  s02Seed(
+    "AC-49",
+    "担当者を編集しても取次メモは作成時の内容のまま（マイナビ／原田を選んで作成。電話番号は 0312345678 → 09012345678 に編集済み）",
+    [
+      acMemo(1, {
+        companyName: "マイナビ",
+        personName: "原田",
+        phone: "0312345678",
+        companyId: 1,
+        contactId: 1,
+        purpose: "callback",
+      }),
+    ],
+    {
+      companies: [MYNAVI()],
+      contacts: [{ ...HARADA(), phone: "09012345678", updatedAt: jst(2026, 11, 6, 9, 0) }],
+    },
+  ),
+];
+
 // ---------- シードの一覧（/__seed） ----------
 
 export type Seed = {
@@ -759,6 +838,7 @@ export const SEEDS: Seed[] = [
   // AC ごとのシード（/__seed/AC-xx）。その AC の画面を作るときに足す
   ...AC_SEEDS_S01,
   ...AC_SEEDS_S04,
+  ...AC_SEEDS_S02,
   ...AC_SEEDS_S05,
   ...AC_SEEDS_S07,
   ...AC_SEEDS_S06,

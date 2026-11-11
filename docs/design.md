@@ -115,6 +115,9 @@
 - 取次メモの状態
   - 未対処：`status-open` で「● 未対処」（黒の太字）
   - 対処済み：`status-done` で「✓ 対処済み」（補助グレー）
+  - 画面からは `MemoStatusLabel`（`src/views/components.tsx`）を使う
+- 行を押して詳細を開く一覧（S-02）：行に `cursor-pointer` と hover の区画 `#F0F0EC`（`hover:bg-base-200`）を付ける。キーボード用に、先頭の列（受電日時）をリンクにする
+- ページ切り替え（S-02）：「前へ」「いまのページ / ページの数」「次へ」。ボタンは通常ボタン、前・次がないときは disabled の見た目（仮。`docs/questions.md` Q-M04）
 
 ### 4.9 確認ダイアログ
 
@@ -140,7 +143,7 @@
 | 部品 | 置き場所 |
 |---|---|
 | ヘッダー（メニュー・ログイン中の利用者名・ログインユーザー切替）、画面の見出し、完了メッセージの位置 | `src/views/AppLayout.tsx`（画面は `src/routes/page.tsx` の `renderPage` で返す） |
-| 完了メッセージ、「削除」ボタンと確認ダイアログ、【未決】バッジ、モック専用の枠 | `src/views/components.tsx`（`FlashMessage`・`DeleteButton`・`PendingBadge`・`MockBox`） |
+| 完了メッセージ、「削除」ボタンと確認ダイアログ、【未決】バッジ、モック専用の枠、取次メモの状態 | `src/views/components.tsx`（`FlashMessage`・`DeleteButton`・`PendingBadge`・`MockBox`・`MemoStatusLabel`） |
 | 入力欄（項目名・入力欄・エラーメッセージ。4.2・4.3） | `src/views/components.tsx`（1行：`TextField`、複数行：`TextAreaField`、プルダウン：`SelectField`。プルダウンは先頭に空の選択肢を置く）。幅は `max-w-xl` |
 | S-01 の取次可否の判定と内訳（5章） | `src/views/verdict.tsx`（`Verdict`・`Breakdown`）。`/__styleguide` の見本も同じ部品。採用値は `resolveSetting` で決めて渡す |
 | 宛先ごとの取次可否の表と「保存」ボタン（S-06・S-08） | `src/views/SettingsSection.tsx`（`SettingsSection`）。送られた値の読み取りは `src/routes/settings-form.ts` |
