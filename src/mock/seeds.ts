@@ -486,6 +486,42 @@ const AC_SEEDS_S09: Seed[] = [
   s09Seed("AC-67", "担当者の電話番号が15桁なら保存できる"),
 ];
 
+// 担当者詳細（S-08）を開いた状態の AC：担当者「マイナビ／原田」（ID 1）
+const AC_SEEDS_S08: Seed[] = [
+  {
+    name: "AC-28",
+    description:
+      "AC-28 担当者単位の取次可否を代理で設定する：益岡でログイン、担当者「マイナビ／原田」（宛先「菊地」は未設定）、S-08 担当者詳細（原田）を開く",
+    build: withDefault({
+      companies: [acCompany(1, "マイナビ", "まいなび")],
+      contacts: [acContact(1, 1, "原田", "はらだ", "0312345678")],
+    }),
+    loginEmail: USER_MASUOKA.email,
+    redirect: "/contacts/1",
+  },
+  {
+    name: "AC-40",
+    description: "AC-40 担当者を編集する：担当者「マイナビ／原田」（0312345678）、S-08 担当者詳細（原田）を開く",
+    build: withDefault({
+      companies: [acCompany(1, "マイナビ", "まいなび")],
+      contacts: [acContact(1, 1, "原田", "はらだ", "0312345678")],
+    }),
+    loginEmail: USER_KIKUCHI.email,
+    redirect: "/contacts/1",
+  },
+  {
+    // 「佐藤」の電話番号は Given にないため、AC-58 と同じ値とする
+    name: "AC-41",
+    description: "AC-41 担当者を削除する：会社「マイナビ」に担当者「原田」「佐藤」、S-08 担当者詳細（原田）を開く",
+    build: withDefault({
+      companies: [acCompany(1, "マイナビ", "まいなび")],
+      contacts: [acContact(1, 1, "原田", "はらだ", "0312345678"), acContact(2, 1, "佐藤", "さとう", "0398765432")],
+    }),
+    loginEmail: USER_KIKUCHI.email,
+    redirect: "/contacts/1",
+  },
+];
+
 // ---------- シードの一覧（/__seed） ----------
 
 export type Seed = {
@@ -521,6 +557,7 @@ export const SEEDS: Seed[] = [
   ...AC_SEEDS_S07,
   ...AC_SEEDS_S06,
   ...AC_SEEDS_S09,
+  ...AC_SEEDS_S08,
 ];
 
 export function findSeed(name: string): Seed | undefined {

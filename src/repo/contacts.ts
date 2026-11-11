@@ -1,5 +1,5 @@
 // 担当者のデータアクセス（後で D1 に差し替える。D1 と同じく Promise を返す）
-// 削除済みの担当者は既定で除外する。削除は S-08 を作るときに足す。
+// 削除済みの担当者は既定で除外する。
 // 入力チェックは src/domain/contact.ts で済ませてから呼ぶ。
 
 import { getStore, nextId } from "../mock/store.ts";
@@ -40,5 +40,14 @@ export async function updateContact(id: Id, values: ContactValues, updatedBy: Id
   const contact = getStore().contacts.find((p) => p.id === id && !p.deleted);
   if (!contact) return null;
   Object.assign(contact, values, { updatedBy, updatedAt: now.toISOString() });
+  return { ...contact };
+}
+
+// 削除する（論理削除）。データは残し、削除フラグを立てて更新者・更新日時を記録する。
+// 担当者単位の取次可否・紐づく取次メモはそのまま残す。削除済み・存在しない担当者なら null
+export async function deleteContact(id: Id, updatedBy: Id, now: Date): Promise<Contact | null> {
+  const contact = getStore().contacts.find((p) => p.id === id && !p.deleted);
+  if (!contact) return null;
+  Object.assign(contact, { deleted: true, updatedBy, updatedAt: now.toISOString() });
   return { ...contact };
 }

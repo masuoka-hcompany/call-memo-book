@@ -2,17 +2,17 @@
 
 import { type Context, Hono } from "hono";
 import { type CompanyInput, validateCompanyInput } from "../domain/company.ts";
-import { isSettingValue, type SettingValue, settingChanges } from "../domain/setting.ts";
 import { createCompany, deleteCompany, findCompany, listCompanies, updateCompany } from "../repo/companies.ts";
 import { listContactsByCompany } from "../repo/contacts.ts";
 import { listCompanySettings, saveCompanySettings } from "../repo/settings.ts";
 import { listUsers } from "../repo/users.ts";
 import type { AppEnv } from "../types.ts";
-import { CompanyDetailPage, settingFieldName } from "../views/CompanyDetailPage.tsx";
+import { CompanyDetailPage } from "../views/CompanyDetailPage.tsx";
 import { CompanyFormPage } from "../views/CompanyFormPage.tsx";
 import { CompanyListPage } from "../views/CompanyListPage.tsx";
 import { screen } from "../views/screens.ts";
 import { renderPage, setFlash } from "./page.tsx";
+import { submittedSettingChanges } from "./settings-form.ts";
 
 export const companies = new Hono<AppEnv>();
 
@@ -110,15 +110,8 @@ companies.get(`/companies/${ID}`, async (c) => {
 companies.post(`/companies/${ID}/settings`, async (c) => {
   const id = Number(c.req.param("id"));
   if (!(await findCompany(id))) return c.notFound();
-  const body = await c.req.parseBody();
-  const current = new Map<number, SettingValue>();
-  const submitted = new Map<number, SettingValue>();
-  for (const s of await listCompanySettings(id)) {
-    current.set(s.recipient.id, s.value);
-    const value = body[settingFieldName(s.recipient.id)];
-    if (isSettingValue(value)) submitted.set(s.recipient.id, value);
-  }
-  await saveCompanySettings(id, settingChanges(current, submitted), c.var.currentUser.id, new Date());
+  const changes = submittedSettingChanges(await c.req.parseBody(), await listCompanySettings(id));
+  await saveCompanySettings(id, changes, c.var.currentUser.id, new Date());
   setFlash(c, "settingsUpdated");
   return c.redirect(`/companies/${id}`, 303);
 });
