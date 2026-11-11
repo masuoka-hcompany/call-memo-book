@@ -11,7 +11,7 @@ import { renderPage } from "./page.tsx";
 
 export const placeholder = new Hono<AppEnv>();
 
-for (const s of SCREENS) {
+for (const s of SCREENS.filter((s) => !s.built)) {
   for (const path of s.paths) {
     placeholder.get(path, (c) =>
       renderPage(c, {

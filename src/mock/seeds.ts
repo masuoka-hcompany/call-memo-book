@@ -289,6 +289,79 @@ export function buildDemoData(): StoreData {
   };
 }
 
+// ---------- AC ごとのシード（Given の状態） ----------
+// 共通の前提に、Given に書かれたものだけを足す。ID は固定。
+// Given に書かれていない更新者・更新日時・メモは、更新者「菊地」・SEEDED_AT・空とする。
+
+function acCompany(id: Id, name: string, kana: string): Company {
+  return { id, name, kana, memo: "", deleted: false, updatedBy: USER_KIKUCHI.id, updatedAt: SEEDED_AT };
+}
+
+function acContact(id: Id, companyId: Id, name: string, kana: string, phone: string): Contact {
+  return {
+    id,
+    companyId,
+    name,
+    kana,
+    phone,
+    memo: "",
+    deleted: false,
+    updatedBy: USER_KIKUCHI.id,
+    updatedAt: SEEDED_AT,
+  };
+}
+
+function withDefault(add: Partial<StoreData>): () => StoreData {
+  return () => ({ ...buildDefaultData(), ...structuredClone(add) });
+}
+
+// 会社一覧（S-05）を開いた状態の AC
+const AC_SEEDS_S05: Seed[] = [
+  {
+    name: "AC-21",
+    description: "AC-21 会社を登録する：会社0件、S-05 会社一覧を開く",
+    build: buildDefaultData,
+    loginEmail: USER_KIKUCHI.email,
+    redirect: "/companies",
+  },
+  {
+    name: "AC-22",
+    description: "AC-22 同じ会社名の会社を登録する：会社「マイナビ」1件、S-05 会社一覧を開く",
+    build: withDefault({ companies: [acCompany(1, "マイナビ", "まいなび")] }),
+    loginEmail: USER_KIKUCHI.email,
+    redirect: "/companies",
+  },
+  {
+    name: "AC-57",
+    description: "AC-57 会社一覧で検索する：会社「マイナビ」「ミイダス」、S-05 会社一覧を開く",
+    build: withDefault({
+      companies: [acCompany(1, "マイナビ", "まいなび"), acCompany(2, "ミイダス", "みいだす")],
+    }),
+    loginEmail: USER_KIKUCHI.email,
+    redirect: "/companies",
+  },
+  {
+    // Given に画面の指定はない。When の「S-05 会社一覧を開く」の画面にリダイレクトする。
+    // 担当者2人の名前・電話番号は Given にないため、AC-45 と同じ「原田」「佐藤」とする。
+    name: "AC-58",
+    description:
+      "AC-58 会社一覧の並び順と担当者数：会社「ミイダス」（担当者0人）、「マイナビ」（担当者2人）の順に登録、S-05 会社一覧を開く",
+    build: withDefault({
+      companies: [acCompany(1, "ミイダス", "みいだす"), acCompany(2, "マイナビ", "まいなび")],
+      contacts: [acContact(1, 2, "原田", "はらだ", "0312345678"), acContact(2, 2, "佐藤", "さとう", "0398765432")],
+    }),
+    loginEmail: USER_KIKUCHI.email,
+    redirect: "/companies",
+  },
+  {
+    name: "AC-68",
+    description: "AC-68 会社名を空にしてよみがなだけで登録できる：会社0件、S-05 会社一覧を開く",
+    build: buildDefaultData,
+    loginEmail: USER_KIKUCHI.email,
+    redirect: "/companies",
+  },
+];
+
 // ---------- シードの一覧（/__seed） ----------
 
 export type Seed = {
@@ -319,7 +392,8 @@ export const SEEDS: Seed[] = [
     loginEmail: DEFAULT_LOGIN_EMAIL,
     redirect: "/",
   },
-  // AC ごとのシード（/__seed/AC-xx）は、その AC の画面を作るときに足す
+  // AC ごとのシード（/__seed/AC-xx）。その AC の画面を作るときに足す
+  ...AC_SEEDS_S05,
 ];
 
 export function findSeed(name: string): Seed | undefined {

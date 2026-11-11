@@ -5,6 +5,7 @@ import { secureHeaders } from "hono/secure-headers";
 import { accessAuth } from "./middleware/access.ts";
 import { currentUser } from "./middleware/current-user.ts";
 import { assets } from "./routes/assets.ts";
+import { companies } from "./routes/companies.tsx";
 import { mock } from "./routes/mock.tsx";
 import { placeholder } from "./routes/placeholder.tsx";
 import { styleguide } from "./routes/styleguide.tsx";
@@ -28,7 +29,8 @@ app.route("/", mock);
 // 画面上の「ログイン中の利用者」を決める（Access の認証のあと）
 app.use(currentUser);
 
-// 画面（作った画面のルートは placeholder より前に登録する）
+// 画面（作った画面のルートは placeholder より前に登録し、screens.ts の built を true にする）
+app.route("/", companies);
 
 // まだ作っていない画面の仮のページ
 app.route("/", placeholder);

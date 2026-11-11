@@ -21,6 +21,8 @@ export type Screen = {
   nav: NavKey;
   // この画面の URL（Hono のパスの書き方）
   paths: string[];
+  // 作った画面は true（仮のページを出さない）
+  built?: boolean;
 };
 
 export const SCREENS: Screen[] = [
@@ -28,7 +30,7 @@ export const SCREENS: Screen[] = [
   { id: "S-02", name: "取次メモ一覧", nav: "memos", paths: ["/memos"] },
   { id: "S-04", name: "取次メモ作成・編集", nav: "memos", paths: ["/memos/new", "/memos/:id{[0-9]+}/edit"] },
   { id: "S-03", name: "取次メモ詳細", nav: "memos", paths: ["/memos/:id{[0-9]+}"] },
-  { id: "S-05", name: "会社一覧", nav: "companies", paths: ["/companies"] },
+  { id: "S-05", name: "会社一覧", nav: "companies", paths: ["/companies"], built: true },
   { id: "S-07", name: "会社登録・編集", nav: "companies", paths: ["/companies/new", "/companies/:id{[0-9]+}/edit"] },
   { id: "S-06", name: "会社詳細", nav: "companies", paths: ["/companies/:id{[0-9]+}"] },
   {
