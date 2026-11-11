@@ -522,6 +522,75 @@ const AC_SEEDS_S08: Seed[] = [
   },
 ];
 
+// 宛先一覧（S-10）を開いた状態の AC：益岡でログイン
+const RECIPIENT_KIMURA_ID = 3;
+
+// 宛先「木村」（利用者「木村」と同じメールアドレス）
+function acRecipientKimura(): Recipient {
+  return {
+    id: RECIPIENT_KIMURA_ID,
+    displayName: USER_KIMURA.name,
+    email: USER_KIMURA.email,
+    deleted: false,
+    updatedBy: USER_KIKUCHI.id,
+    updatedAt: SEEDED_AT,
+  };
+}
+
+const AC_SEEDS_S10: Seed[] = [
+  {
+    name: "AC-29",
+    description: "AC-29 宛先を追加する：益岡でログイン、利用者「木村」はまだ宛先ではない、S-10 宛先一覧を開く",
+    build: buildDefaultData,
+    loginEmail: USER_MASUOKA.email,
+    redirect: "/recipients",
+  },
+  {
+    name: "AC-42",
+    description: "AC-42 宛先の表示名を編集する：益岡でログイン、宛先「木村」、S-10 宛先一覧を開く",
+    build: () => {
+      const data = buildDefaultData();
+      data.recipients.push(acRecipientKimura());
+      return data;
+    },
+    loginEmail: USER_MASUOKA.email,
+    redirect: "/recipients",
+  },
+  {
+    // 取次メモの項目は Given にないため、相手は未登録（会社・担当者に紐づかない）・用件「伝言希望」・作成者「菊地」とする
+    name: "AC-43",
+    description: "AC-43 宛先を削除する：益岡でログイン、宛先「木村」と、宛先「木村」の取次メモ1件、S-10 宛先一覧を開く",
+    build: () => {
+      const data = buildDefaultData();
+      data.recipients.push(acRecipientKimura());
+      data.memos.push({
+        id: 1,
+        recipientId: RECIPIENT_KIMURA_ID,
+        receivedAt: jst(2026, 11, 5, 14, 30),
+        companyName: "マイナビ",
+        personName: "原田",
+        phone: "0312345678",
+        companyId: null,
+        contactId: null,
+        purpose: "message",
+        message: "",
+        note: "",
+        status: "open",
+        doneBy: null,
+        doneAt: null,
+        createdBy: USER_KIKUCHI.id,
+        createdAt: jst(2026, 11, 5, 14, 32),
+        deleted: false,
+        updatedBy: USER_KIKUCHI.id,
+        updatedAt: jst(2026, 11, 5, 14, 32),
+      });
+      return data;
+    },
+    loginEmail: USER_MASUOKA.email,
+    redirect: "/recipients",
+  },
+];
+
 // ---------- シードの一覧（/__seed） ----------
 
 export type Seed = {
@@ -558,6 +627,7 @@ export const SEEDS: Seed[] = [
   ...AC_SEEDS_S06,
   ...AC_SEEDS_S09,
   ...AC_SEEDS_S08,
+  ...AC_SEEDS_S10,
 ];
 
 export function findSeed(name: string): Seed | undefined {
