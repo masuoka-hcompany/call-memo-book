@@ -16,8 +16,11 @@
   // プレビュー URL は Access アプリケーションの対象外になるため無効にする
   "preview_urls": false,
 
+  // CSS をビルドせず、テキストとして読み込んで配信する（src/routes/assets.ts）
+  "rules": [{ "type": "Text", "globs": ["**/*.css"], "fallthrough": true }],
+
   "observability": {
-    "enabled": true
+    "enabled": true,
   },
 
   "d1_databases": [
@@ -25,15 +28,17 @@
       "binding": "DB",
       "database_name": "call-memo-book-db",
       "database_id": "9c15448c-a7dc-47bf-ae91-c90dcf79cfa2",
-      "migrations_dir": "migrations"
-    }
+      "migrations_dir": "migrations",
+    },
   ],
 
   // デプロイ先の環境依存値。ローカルでは .dev.vars の値で上書きされる。
   // ACCESS_TEAM_DOMAIN / ACCESS_AUD が空のままだと、すべてのリクエストを拒否する（フェイルクローズ）。
+  // MOCK_MODE はレビュー会のモック用（ログインユーザー切替・シード）。Access の認証を通ったあとでだけ動く。
   "vars": {
     "ENVIRONMENT": "production",
     "ACCESS_TEAM_DOMAIN": "summer-block-0388.cloudflareaccess.com",
-    "ACCESS_AUD": "876fc623c5ea67ee810556f5e432b951cbe140cedc3559407d1a9b6b3602ce2c"
-  }
+    "ACCESS_AUD": "467945e639d352f95a060052fc464d00b01c0c76586aab58cbd5e1d69ca2fd7e",
+    "MOCK_MODE": "true",
+  },
 }

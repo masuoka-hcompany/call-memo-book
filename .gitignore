@@ -16,3 +16,6 @@ coverage/
 Thumbs.db
 *.log
 Logs/
+
+# Playwright MCP
+.playwright-mcp/

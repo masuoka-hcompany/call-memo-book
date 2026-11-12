@@ -3,7 +3,16 @@ import { csrf } from "hono/csrf";
 import { logger } from "hono/logger";
 import { secureHeaders } from "hono/secure-headers";
 import { accessAuth } from "./middleware/access.ts";
-import { items } from "./routes/items.tsx";
+import { currentUser } from "./middleware/current-user.ts";
+import { assets } from "./routes/assets.ts";
+import { companies } from "./routes/companies.tsx";
+import { contacts } from "./routes/contacts.tsx";
+import { memos } from "./routes/memos.tsx";
+import { mock } from "./routes/mock.tsx";
+import { placeholder } from "./routes/placeholder.tsx";
+import { recipients } from "./routes/recipients.tsx";
+import { search } from "./routes/search.tsx";
+import { styleguide } from "./routes/styleguide.tsx";
 import type { AppEnv } from "./types.ts";
 
 const app = new Hono<AppEnv>();
@@ -15,6 +24,23 @@ app.use(accessAuth());
 // フォーム POST を同一オリジンからのものに限定する
 app.use(csrf());
 
-app.route("/", items);
+app.route("/", assets);
+
+// モック専用（MOCK_MODE=true のときだけ。Access の認証のあと。ログイン中の利用者は各ルーターで決める）
+app.route("/", styleguide);
+app.route("/", mock);
+
+// 画面上の「ログイン中の利用者」を決める（Access の認証のあと）
+app.use(currentUser);
+
+// 画面（作った画面のルートは placeholder より前に登録し、screens.ts の built を true にする）
+app.route("/", search);
+app.route("/", memos);
+app.route("/", companies);
+app.route("/", contacts);
+app.route("/", recipients);
+
+// まだ作っていない画面の仮のページ
+app.route("/", placeholder);
 
 export default app;
