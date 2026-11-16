@@ -9,7 +9,9 @@ const BASE = "http://localhost:8787";
 const mockEnv = { ...env, ENVIRONMENT: "local", MOCK_MODE: "true" };
 const noMockEnv = { ...env, ENVIRONMENT: "local", MOCK_MODE: "false" };
 
-function get(path: string, cookie?: string, e = mockEnv) {
+// e は追加の変数（DEV_USER_EMAIL など）も渡せるようにする。DEV_USER_EMAIL は .dev.vars にしかなく、
+// CI（.dev.vars なし）で作る Env の型には入らないため
+function get(path: string, cookie?: string, e: Record<string, unknown> = mockEnv) {
   return app.request(`${BASE}${path}`, { headers: cookie ? { Cookie: cookie } : {} }, e);
 }
 
