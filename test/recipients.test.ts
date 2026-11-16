@@ -64,7 +64,7 @@ describe("S-10 宛先一覧", () => {
       expect(html).toContain(`<a href="/recipients/${id}/edit" class="btn btn-plain">編集</a>`);
       expect(html).toMatch(
         new RegExp(
-          String.raw`<form method="post" action="/recipients/${id}/delete"><button type="submit" class="btn btn-plain">削除する</button>`,
+          `<form method="post" action="/recipients/${id}/delete"><button type="submit" class="btn btn-plain">削除する</button>`,
         ),
       );
     }

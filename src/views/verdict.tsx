@@ -21,6 +21,8 @@ export function Verdict({ value }: { value: SettingValue }) {
 
 function Source({ label, value, adopted }: { label: string; value: SettingValue; adopted: boolean }) {
   const text = `${label}：${SETTING_LABELS[value]}`;
+  // Hono の JSX のコンポーネントは文字列を返せないため、フラグメントで包む
+  // biome-ignore lint/complexity/noUselessFragments: 上のとおり必要
   return adopted ? <span class="source-adopted">{`${text} ${VERDICT_LABELS.adopted}`}</span> : <>{text}</>;
 }
 

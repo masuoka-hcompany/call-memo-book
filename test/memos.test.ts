@@ -35,7 +35,7 @@ function post(path: string, form: Record<string, string>, cookie?: string) {
 
 // 入力欄の値
 function value(html: string, name: string): string {
-  const input = new RegExp(String.raw`<input[^>]*name="${name}"[^>]*value="([^"]*)"`).exec(html);
+  const input = new RegExp(`<input[^>]*name="${name}"[^>]*value="([^"]*)"`).exec(html);
   if (input) return input[1] as string;
   const select = html.split(`name="${name}"`)[1]?.split("</select>")[0] ?? "";
   return /<option value="([^"]*)" selected="">/.exec(select)?.[1] ?? "";
