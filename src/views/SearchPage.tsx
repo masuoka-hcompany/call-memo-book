@@ -126,10 +126,6 @@ export function SearchPage({ keyword, searched, rows, selected, settings, create
               <h2 id="settings-heading" class="mb-3 border-b-2 border-base-content pb-1 text-lg font-bold">
                 {L.settings}
               </h2>
-              <p class="mb-2 flex flex-wrap gap-2">
-                <PendingBadge id="Q-M01" label="採用値の強調（判定列）" />
-                <PendingBadge id="Q-M02" label="採用値が「未設定」のときの対応" />
-              </p>
               <table class="w-full" data-table="settings">
                 <tbody>
                   {settings.map((s) => (

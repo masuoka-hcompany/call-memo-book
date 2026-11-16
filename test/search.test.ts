@@ -89,23 +89,24 @@ describe("S-01 相手検索", () => {
     expect(results(html)[0]?.selected).toBe(true);
     expect(html).toContain("宛先ごとの取次可否");
     expect(settings(html)).toEqual([
-      ["菊地", "✕ つながない", "担当者：つながない ← 採用　／　会社：未設定"],
-      ["社長", "● つなぐ", "担当者：つなぐ ← 採用　／　会社：つなぐ"],
+      ["菊地", "✕ つながない", "担当者：つながない ← 優先　／　会社：未設定"],
+      ["社長", "● つなぐ", "担当者：つなぐ ← 優先　／　会社：つなぐ"],
     ]);
-    // 採用された方は太字（source-adopted）
-    expect(html).toContain('<span class="source-adopted">担当者：つながない ← 採用</span>');
+    // 優先された方は太字（source-adopted）
+    expect(html).toContain('<span class="source-adopted">担当者：つながない ← 優先</span>');
     expect(html).toContain('<span class="verdict verdict-ng">✕ つながない</span>');
     // 「取次メモを作成」は選んだ担当者を渡す
     expect(html).toMatch(/<a href="\/memos\/new\?contact=1" class="btn btn-primary">取次メモを作成<\/a>/);
-    for (const id of ["Q-M01", "Q-M02"]) expect(html).toContain(`【未決】${id}`);
+    // Q-M01・Q-M02 は決定済み（2026-11-16）なので、【未決】バッジは出さない
+    for (const id of ["Q-M01", "Q-M02"]) expect(html).not.toContain(`【未決】${id}`);
   });
 
   it("担当者が「未設定」なら会社の値を採用する", async () => {
     useSeed("AC-03");
     getStore().contactSettings = [];
     expect(settings((await page(q("原田", "&contact=1"))).html)).toEqual([
-      ["菊地", "― 未設定", "担当者：未設定　／　会社：未設定 ← 採用"],
-      ["社長", "● つなぐ", "担当者：未設定　／　会社：つなぐ ← 採用"],
+      ["菊地", "― 未設定", "担当者：未設定　／　会社：未設定 ← 優先"],
+      ["社長", "● つなぐ", "担当者：未設定　／　会社：つなぐ ← 優先"],
     ]);
   });
 

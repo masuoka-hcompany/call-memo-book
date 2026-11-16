@@ -5,7 +5,7 @@ import { formatJst } from "../domain/datetime.ts";
 import { MEMO_PURPOSE_LABELS, MEMO_STATUS_LABELS, MEMO_STATUSES } from "../domain/memo.ts";
 import { type MemoListQuery, type MemoPage, RECIPIENT_FILTER_ME } from "../domain/memo-list.ts";
 import type { Memo, Recipient, User } from "../repo/types.ts";
-import { MemoStatusLabel, PendingBadge } from "./components.tsx";
+import { MemoStatusLabel } from "./components.tsx";
 import { LABELS } from "./labels.ts";
 
 // 画面の文言（仕様書 7.1・F-03・7.3）
@@ -122,10 +122,6 @@ export function MemoListPage({ query, recipientOptions, allRecipients, users, no
               </button>
             </form>
           </search>
-          <p class="mt-2 flex flex-wrap gap-2">
-            <PendingBadge id="Q-M30" label="宛先の絞り込みの選択肢" />
-            <PendingBadge id="Q-M31" label="期間・キーワードの細則" />
-          </p>
         </div>
         <a href="/memos/new" class="btn btn-primary">
           {L.createMemo}
@@ -138,9 +134,6 @@ export function MemoListPage({ query, recipientOptions, allRecipients, users, no
         <p data-testid="empty">{L.noMatch}</p>
       ) : (
         <>
-          <p class="mb-2">
-            <PendingBadge id="Q-M32" label="受電日時が同じときの並び" />
-          </p>
           <table class="w-full" data-table="memos">
             <thead>
               <tr class="border-b border-base-300 text-left text-sm text-secondary">
@@ -198,7 +191,7 @@ export function MemoListPage({ query, recipientOptions, allRecipients, users, no
   );
 }
 
-// ページ切り替え（仮の形。docs/questions.md Q-M04）：「前へ」「いまのページ / ページの数」「次へ」
+// ページ切り替え（一覧の中身は実装の判断に任せる。仕様書 v0.3 F-03 備考。docs/questions.md Q-M04）：「前へ」「いまのページ / ページの数」「次へ」
 function Pager({ query, page, pageCount }: { query: MemoListQuery; page: number; pageCount: number }) {
   const link = (target: number, label: string, rel: string) =>
     target >= 1 && target <= pageCount ? (
@@ -217,7 +210,6 @@ function Pager({ query, page, pageCount }: { query: MemoListQuery; page: number;
         {page} / {pageCount}
       </span>
       {link(page + 1, LABELS.next, "next")}
-      <PendingBadge id="Q-M04" label="ページ切り替えの見せ方" />
     </nav>
   );
 }

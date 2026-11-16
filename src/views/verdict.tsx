@@ -1,14 +1,14 @@
-// S-01 の取次可否の表示（判定と内訳。docs/design.md 5章、【未決】Q-M01）
+// S-01 の取次可否の表示（判定と内訳。docs/design.md 5章。Q-M01：2026-11-16 決定、案A）
 // 採用値は src/domain/setting.ts の resolveSetting で決める。ここでは計算しない。
 // /__styleguide の見本もこの部品で表示する。
 
 import { type ResolvedSetting, SETTING_LABELS, type SettingValue } from "../domain/setting.ts";
 
-// 内訳の語（design.md 5.3。Q-M01 の案の一部）
+// 内訳の語（design.md 5.3。優先された方に「← 優先」を添える。Q-M01 の決定）
 export const VERDICT_LABELS = {
   contact: "担当者",
   company: "会社",
-  adopted: "← 採用",
+  adopted: "← 優先",
   separator: "　／　",
 } as const;
 
@@ -26,7 +26,7 @@ function Source({ label, value, adopted }: { label: string; value: SettingValue;
   return adopted ? <span class="source-adopted">{`${text} ${VERDICT_LABELS.adopted}`}</span> : <>{text}</>;
 }
 
-// 内訳：担当者と会社の取次可否を並べ、採用された方を太字と「← 採用」で示す。
+// 内訳：担当者と会社の取次可否を並べ、優先された方を太字と「← 優先」で示す。
 // contact が null（担当者のいない会社の行）なら、会社の取次可否だけを出す（F-01・AC-46）
 export function Breakdown({
   contact,

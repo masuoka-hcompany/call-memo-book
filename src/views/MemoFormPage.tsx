@@ -28,9 +28,7 @@ export function MemoFormPage({ action, values, recipients, link, errors = {} }: 
   const L = MEMO_FIELD_LABELS;
   return (
     <>
-      <p class="mb-6 flex flex-wrap gap-2">
-        <PendingBadge id="Q-M16" label="見出しを作成と編集で分けるか" />
-        <PendingBadge id="Q-M29" label="用件の入力の形と初期値" />
+      <p class="mb-6">
         <PendingBadge id="Q-M28" label="選べない値・形式が違う値が送られたとき" />
       </p>
       <form method="post" action={action} novalidate class="max-w-xl">
@@ -62,12 +60,9 @@ export function MemoFormPage({ action, values, recipients, link, errors = {} }: 
         />
         <TextAreaField name="message" label={L.message} value={values.message} errors={errors.message} rows={6} />
         <TextAreaField name="note" label={L.note} value={values.note} errors={errors.note} />
-        <div class="flex items-center gap-4">
-          <button type="submit" class="btn btn-primary">
-            {SAVE_LABEL}
-          </button>
-          <PendingBadge id="Q-M15" label="保存せずに入力をやめる操作" />
-        </div>
+        <button type="submit" class="btn btn-primary">
+          {SAVE_LABEL}
+        </button>
       </form>
     </>
   );

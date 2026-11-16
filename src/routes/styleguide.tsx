@@ -257,9 +257,6 @@ styleguide.get("/__styleguide", async (c) => {
         </Section>
 
         <Section id="verdict" title="S-01 の取次可否（判定列）">
-          <p class="mb-4">
-            <PendingBadge id="Q-M01" label="採用値の強調（判定列）" />
-          </p>
           <div class="grid grid-cols-2 gap-8">
             {VERDICT_PATTERNS.map((p) => {
               const resolved = resolveSetting(p.person, p.company);
@@ -313,7 +310,7 @@ styleguide.get("/__styleguide", async (c) => {
         </Section>
 
         <Section id="badge" title="【未決】バッジ（モック専用）">
-          <PendingBadge id="Q-M01" label="採用値の強調" />
+          <PendingBadge id="Q-M03" label="確認ダイアログのボタン名" />
         </Section>
 
         <Section id="mock" title="モック専用の表示">

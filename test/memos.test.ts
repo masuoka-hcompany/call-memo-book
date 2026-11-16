@@ -88,7 +88,9 @@ describe("S-04 取次メモ作成", () => {
     expect(html).toMatch(/<button type="submit" class="btn btn-primary">保存<\/button>/);
     expect(html).toContain("novalidate");
     expect(html).not.toMatch(/required|maxlength|pattern=/);
-    for (const id of ["Q-M15", "Q-M16", "Q-M28", "Q-M29"]) expect(html).toContain(`【未決】${id}`);
+    expect(html).toContain("【未決】Q-M28");
+    // Q-M15・Q-M16・Q-M29 は S-04 では決定済み（2026-11-16）
+    for (const id of ["Q-M15", "Q-M16", "Q-M29"]) expect(html).not.toContain(`【未決】${id}`);
   });
 
   it("AC-05：S-01 で選んだ担当者の会社名・氏名・電話番号が入る", async () => {
