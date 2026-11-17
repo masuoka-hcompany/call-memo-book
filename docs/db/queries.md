@@ -222,17 +222,30 @@ WHERE id = ?1 AND deleted_at IS NULL;
 ```
 
 ### 3.3 会社の削除（S-06・F-06）
-所属する担当者に、会社と同じ削除日時を入れる。2つの文を `db.batch()` で1つにまとめ、担当者を先に流す（会社が削除されていないことを担当者の文で確かめるため）。
+所属する担当者に、会社と同じ削除日時を入れる。復旧のときに「会社と一緒に削除された担当者」を削除日時で見分けるので、**同じ会社に、既に同じ削除日時で個別に削除された担当者がいるときは削除しない**（時刻をずらしてやり直す）。
+
+2つの文を `db.batch()` で1つにまとめ、会社を先に流す。
 
 ```sql
+-- 1. 会社：同じ会社に、削除日時が ?now の担当者が既にいたら0行
+UPDATE companies SET deleted_at = ?now, updated_by = ?by, updated_at = ?now
+WHERE id = ?1 AND deleted_at IS NULL
+  AND NOT EXISTS (SELECT 1 FROM contacts WHERE company_id = ?1 AND deleted_at = ?now);
+
+-- 2. 担当者：1. で会社が ?now で削除されたときだけ
 UPDATE contacts SET deleted_at = ?now, updated_by = ?by, updated_at = ?now
 WHERE company_id = ?1 AND deleted_at IS NULL
-  AND EXISTS (SELECT 1 FROM companies WHERE id = ?1 AND deleted_at IS NULL);
-
-UPDATE companies SET deleted_at = ?now, updated_by = ?by, updated_at = ?now
-WHERE id = ?1 AND deleted_at IS NULL;  -- 変わった行が0なら、削除済み・存在しない会社
+  AND EXISTS (SELECT 1 FROM companies WHERE id = ?1 AND deleted_at = ?now);
 ```
 
+1. で変わった行が0のときは、アプリが会社を取り直して見分ける。
+
+| 会社の状態 | 理由 | アプリの動き |
+|---|---|---|
+| 削除されていない | 同じ会社の担当者が、同じミリ秒に個別に削除されていた | `?now` を1ミリ秒進めて、batch をやり直す（数回で打ち切る） |
+| 削除済み・存在しない | 既に削除されている | やり直さない（削除済み・存在しない会社として扱う） |
+
+- batch の中の文は、他の書き込みに割り込まれずに順に流れる。そのため、1. で確かめてから 2. までの間に、同じ時刻の個別の削除が入ることはない
 - 既に個別に削除されていた担当者は `deleted_at IS NULL` に当たらないので、削除日時はそのまま（会社と違う値）になる
 - 紐づく取次メモ・取次可否はそのまま残す
 
