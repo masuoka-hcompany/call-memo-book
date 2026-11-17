@@ -3,21 +3,25 @@
 --
 -- 共通の決まり
 -- - 日時はすべて UTC の文字列で、JS の Date#toISOString() と同じ形（例：2026-11-05T05:30:00.000Z）にそろえる。
---   形をそろえると、文字列のまま並べ替え・期間の比較ができる。CHECK は strftime で正規化した値と一致することを確かめる
---   （NULL は CHECK を通る）。
+--   形をそろえると、文字列のまま並べ替え・期間の比較ができる。
+--   CHECK は「x IS strftime('%Y-%m-%dT%H:%M:%fZ', x, '+0 seconds')」で、日時として計算し直した値と一致することを確かめる。
+--   - = ではなく IS で比べる：日時として読めない値（'abc' など）は strftime が NULL を返し、= だと CHECK を通ってしまうため。
+--     IS なら NULL の列（削除されていない deleted_at など）は通り、読めない値は弾く
+--   - '+0 seconds'：日時を計算し直させて、24:00 のような値（翌日の 00:00 になる）も弾くため
 -- - 論理削除は deleted_at（削除日時。NULL なら削除されていない）。削除のときは updated_by・updated_at も記録する。
 --   会社を削除するときは、所属する担当者に会社と同じ deleted_at を入れる（一緒に削除された担当者を見分けるため）。
 -- - 文字数の CHECK は length()（文字数＝コードポイント数で数える）。エラーメッセージを出す入力チェックはアプリ側
 --   （src/domain/）で行い、ここの CHECK は最後の守りとする。
 -- - メールアドレスは大文字・小文字を区別せずに比べる（COLLATE NOCASE）。
 
--- 利用者（F-10。初回ログイン時に登録する。画面から編集・削除しない）
+-- 利用者（F-10。初回ログイン時に登録する。画面から編集・削除しない）。
+-- 名前は宛先の表示名（255文字以内）の初期値になるので、同じ上限にする
 CREATE TABLE users (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   email TEXT NOT NULL COLLATE NOCASE UNIQUE CHECK (email <> ''),
-  name TEXT NOT NULL CHECK (name <> ''),
+  name TEXT NOT NULL CHECK (name <> '' AND length(name) <= 255),
   created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
-    CHECK (created_at = strftime('%Y-%m-%dT%H:%M:%fZ', created_at))
+    CHECK (created_at IS strftime('%Y-%m-%dT%H:%M:%fZ', created_at, '+0 seconds'))
 );
 
 -- 宛先（F-09）。利用者とはメールアドレスで照合する（まだログインしていない人も登録するため、users への外部キーにしない）。
@@ -28,10 +32,10 @@ CREATE TABLE recipients (
   display_name TEXT NOT NULL CHECK (display_name <> '' AND length(display_name) <= 255),
   email TEXT NOT NULL COLLATE NOCASE UNIQUE CHECK (email <> ''),
   created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
-    CHECK (created_at = strftime('%Y-%m-%dT%H:%M:%fZ', created_at)),
+    CHECK (created_at IS strftime('%Y-%m-%dT%H:%M:%fZ', created_at, '+0 seconds')),
   updated_by INTEGER REFERENCES users (id),
-  updated_at TEXT CHECK (updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', updated_at)),
-  deleted_at TEXT CHECK (deleted_at = strftime('%Y-%m-%dT%H:%M:%fZ', deleted_at)),
+  updated_at TEXT CHECK (updated_at IS strftime('%Y-%m-%dT%H:%M:%fZ', updated_at, '+0 seconds')),
+  deleted_at TEXT CHECK (deleted_at IS strftime('%Y-%m-%dT%H:%M:%fZ', deleted_at, '+0 seconds')),
   CHECK ((updated_by IS NULL) = (updated_at IS NULL))
 );
 
@@ -43,10 +47,10 @@ CREATE TABLE companies (
   phone TEXT NOT NULL DEFAULT '' CHECK (phone NOT GLOB '*[^0-9]*' AND length(phone) <= 15),
   memo TEXT NOT NULL DEFAULT '' CHECK (length(memo) <= 1000),
   created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
-    CHECK (created_at = strftime('%Y-%m-%dT%H:%M:%fZ', created_at)),
+    CHECK (created_at IS strftime('%Y-%m-%dT%H:%M:%fZ', created_at, '+0 seconds')),
   updated_by INTEGER NOT NULL REFERENCES users (id),
-  updated_at TEXT NOT NULL CHECK (updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', updated_at)),
-  deleted_at TEXT CHECK (deleted_at = strftime('%Y-%m-%dT%H:%M:%fZ', deleted_at))
+  updated_at TEXT NOT NULL CHECK (updated_at IS strftime('%Y-%m-%dT%H:%M:%fZ', updated_at, '+0 seconds')),
+  deleted_at TEXT CHECK (deleted_at IS strftime('%Y-%m-%dT%H:%M:%fZ', deleted_at, '+0 seconds'))
 );
 
 -- 会社一覧（S-05）：削除されていない会社を、よみがな順（同じなら登録順）
@@ -62,10 +66,10 @@ CREATE TABLE contacts (
   phone TEXT NOT NULL CHECK (phone <> '' AND phone NOT GLOB '*[^0-9]*' AND length(phone) <= 15),
   memo TEXT NOT NULL DEFAULT '' CHECK (length(memo) <= 1000),
   created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
-    CHECK (created_at = strftime('%Y-%m-%dT%H:%M:%fZ', created_at)),
+    CHECK (created_at IS strftime('%Y-%m-%dT%H:%M:%fZ', created_at, '+0 seconds')),
   updated_by INTEGER NOT NULL REFERENCES users (id),
-  updated_at TEXT NOT NULL CHECK (updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', updated_at)),
-  deleted_at TEXT CHECK (deleted_at = strftime('%Y-%m-%dT%H:%M:%fZ', deleted_at))
+  updated_at TEXT NOT NULL CHECK (updated_at IS strftime('%Y-%m-%dT%H:%M:%fZ', updated_at, '+0 seconds')),
+  deleted_at TEXT CHECK (deleted_at IS strftime('%Y-%m-%dT%H:%M:%fZ', deleted_at, '+0 seconds'))
 );
 
 -- 会社の担当者一覧（S-06）・担当者数（S-05）・相手の検索（S-01）・会社の削除
@@ -74,13 +78,16 @@ CREATE INDEX contacts_active_company ON contacts (company_id, id) WHERE deleted_
 CREATE UNIQUE INDEX contacts_id_company ON contacts (id, company_id);
 
 -- 取次可否（会社単位。F-08）。会社×宛先で1件。行がなければ「未設定」（更新者・更新日時なし）。
--- 一度保存したあとに「未設定」に戻したときは、行を残して value = 'unset' にする（更新者を記録するため）
+-- 一度保存したあとに「未設定」に戻したときは、行を残して value = 'unset' にする（更新者を記録するため）。
+-- created_at は最初に保存した日時（UPSERT の更新では書かない）
 CREATE TABLE company_settings (
   company_id INTEGER NOT NULL REFERENCES companies (id),
   recipient_id INTEGER NOT NULL REFERENCES recipients (id),
   value TEXT NOT NULL CHECK (value IN ('connect', 'decline', 'unset')),
+  created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
+    CHECK (created_at IS strftime('%Y-%m-%dT%H:%M:%fZ', created_at, '+0 seconds')),
   updated_by INTEGER NOT NULL REFERENCES users (id),
-  updated_at TEXT NOT NULL CHECK (updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', updated_at)),
+  updated_at TEXT NOT NULL CHECK (updated_at IS strftime('%Y-%m-%dT%H:%M:%fZ', updated_at, '+0 seconds')),
   PRIMARY KEY (company_id, recipient_id)
 );
 
@@ -89,8 +96,10 @@ CREATE TABLE contact_settings (
   contact_id INTEGER NOT NULL REFERENCES contacts (id),
   recipient_id INTEGER NOT NULL REFERENCES recipients (id),
   value TEXT NOT NULL CHECK (value IN ('connect', 'decline', 'unset')),
+  created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
+    CHECK (created_at IS strftime('%Y-%m-%dT%H:%M:%fZ', created_at, '+0 seconds')),
   updated_by INTEGER NOT NULL REFERENCES users (id),
-  updated_at TEXT NOT NULL CHECK (updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', updated_at)),
+  updated_at TEXT NOT NULL CHECK (updated_at IS strftime('%Y-%m-%dT%H:%M:%fZ', updated_at, '+0 seconds')),
   PRIMARY KEY (contact_id, recipient_id)
 );
 
@@ -102,7 +111,10 @@ CREATE TABLE memos (
   recipient_id INTEGER NOT NULL REFERENCES recipients (id),
   -- 受電日時（分単位）
   received_at TEXT NOT NULL
-    CHECK (received_at = strftime('%Y-%m-%dT%H:%M:%fZ', received_at) AND substr(received_at, 18, 6) = '00.000'),
+    CHECK (
+      received_at IS strftime('%Y-%m-%dT%H:%M:%fZ', received_at, '+0 seconds')
+      AND substr(received_at, 18, 6) = '00.000'
+    ),
   company_name TEXT NOT NULL CHECK (company_name <> '' AND length(company_name) <= 255),
   person_name TEXT NOT NULL DEFAULT '' CHECK (length(person_name) <= 255),
   phone TEXT NOT NULL DEFAULT '' CHECK (phone NOT GLOB '*[^0-9]*' AND length(phone) <= 15),
@@ -115,12 +127,12 @@ CREATE TABLE memos (
   -- 状態：open（未対処）／done（対処済み）
   status TEXT NOT NULL DEFAULT 'open' CHECK (status IN ('open', 'done')),
   done_by INTEGER REFERENCES users (id),
-  done_at TEXT CHECK (done_at = strftime('%Y-%m-%dT%H:%M:%fZ', done_at)),
+  done_at TEXT CHECK (done_at IS strftime('%Y-%m-%dT%H:%M:%fZ', done_at, '+0 seconds')),
   created_by INTEGER NOT NULL REFERENCES users (id),
-  created_at TEXT NOT NULL CHECK (created_at = strftime('%Y-%m-%dT%H:%M:%fZ', created_at)),
+  created_at TEXT NOT NULL CHECK (created_at IS strftime('%Y-%m-%dT%H:%M:%fZ', created_at, '+0 seconds')),
   updated_by INTEGER NOT NULL REFERENCES users (id),
-  updated_at TEXT NOT NULL CHECK (updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', updated_at)),
-  deleted_at TEXT CHECK (deleted_at = strftime('%Y-%m-%dT%H:%M:%fZ', deleted_at)),
+  updated_at TEXT NOT NULL CHECK (updated_at IS strftime('%Y-%m-%dT%H:%M:%fZ', updated_at, '+0 seconds')),
+  deleted_at TEXT CHECK (deleted_at IS strftime('%Y-%m-%dT%H:%M:%fZ', deleted_at, '+0 seconds')),
   -- 担当者を紐づけるなら、その担当者の会社も紐づける（どちらかが NULL なら外部キーは確かめない）
   FOREIGN KEY (contact_id, company_id) REFERENCES contacts (id, company_id),
   CHECK (contact_id IS NULL OR company_id IS NOT NULL),

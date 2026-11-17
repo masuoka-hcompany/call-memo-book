@@ -5,7 +5,8 @@
 - 型は SQLite の型。日時はすべて TEXT（UTC、`2026-11-05T05:30:00.000Z` の形。README 1.2）
 - 「必須」は NOT NULL かつ空文字でない、「任意」は NOT NULL で空文字 `''` を許す（NULL にしない）。空かどうかの判定と、部分一致の比較を単純にするため
 - 文字数は `length()`（コードポイントの数）
-- 「共通の列」：`created_at`（作成日時。省略時は現在時刻）、`updated_by`（更新者。`users.id`）、`updated_at`（更新日時）、`deleted_at`（削除日時。NULL なら削除されていない）
+- 「共通の列」：`created_at`（作成日時。省略時は現在時刻。ただし `memos` は既定値なしで、作成時にアプリが入れる）、`updated_by`（更新者。`users.id`）、`updated_at`（更新日時）、`deleted_at`（削除日時。NULL なら削除されていない）
+- 日時の CHECK は `x IS strftime('%Y-%m-%dT%H:%M:%fZ', x, '+0 seconds')`（README 1.2）
 - 「例」の値は説明のための架空のもの。名前は仕様書の AC に合わせ、メールアドレスは `@example.com` の仮の値にしている（`docs/questions.md` Q-M05）。日時の例の（ ）内は日本時間
 
 ## users（利用者）
@@ -14,7 +15,7 @@
 |---|---|---|---|---|---|
 | id | INTEGER | × | PK（AUTOINCREMENT） | | `1` |
 | email | TEXT | × | UNIQUE、`COLLATE NOCASE`、空不可 | メールアドレス（Cloudflare Access の認証情報から取る） | `kikuchi@example.com` |
-| name | TEXT | × | 空不可 | 名前（Google アカウントの表示名。取れなければメールアドレス。F-10） | `菊地` |
+| name | TEXT | × | 空不可、255文字以内 | 名前（Google アカウントの表示名。取れなければメールアドレス。F-10）。宛先の表示名の初期値になるので、同じ上限にする（長ければアプリで切り詰める） | `菊地` |
 | created_at | TEXT | × | 既定：現在時刻 | 初回ログインの日時 | `2026-11-20T00:15:00.000Z`（11/20 09:15） |
 
 - 論理削除・更新者はない（画面から編集・削除しない。F-10）
@@ -77,6 +78,7 @@
 | company_id | INTEGER | × | PK、FK → companies.id | | `10` |
 | recipient_id | INTEGER | × | PK、FK → recipients.id | | `1` |
 | value | TEXT | × | `connect` / `decline` / `unset` | 取次可否 | `decline`（つながない） |
+| created_at | TEXT | × | 既定：現在時刻 | 最初に保存した日時（更新では変えない） | `2026-11-20T03:00:00.000Z`（11/20 12:00） |
 | updated_by | INTEGER | × | FK → users.id | | `2` |
 | updated_at | TEXT | × | | | `2026-11-21T05:00:00.000Z`（11/21 14:00） |
 
@@ -93,6 +95,7 @@
 | contact_id | `20` |
 | recipient_id | `1` |
 | value | `connect`（つなぐ） |
+| created_at | `2026-11-21T05:01:00.000Z` |
 | updated_by | `2` |
 | updated_at | `2026-11-21T05:01:00.000Z` |
 
@@ -104,7 +107,7 @@
 |---|---|---|---|---|---|
 | id | INTEGER | × | PK（AUTOINCREMENT） | | `100` |
 | recipient_id | INTEGER | × | FK → recipients.id | 宛先 | `1` |
-| received_at | TEXT | × | 秒以下は `00.000`（分単位） | 受電日時 | `2026-11-05T05:30:00.000Z`（11/05 14:30） |
+| received_at | TEXT | × | 秒以下は `00.000`（分単位） | 受電日時 | `2026-11-24T05:30:00.000Z`（11/24 14:30） |
 | company_name | TEXT | × | 空不可、255文字以内 | 会社名（作成時の値） | `マイナビ` |
 | person_name | TEXT | × | 255文字以内、既定 `''` | 氏名（作成時の値） | `原田`／`''` |
 | phone | TEXT | × | 半角数字のみ、15桁以内、既定 `''` | 電話番号（作成時の値） | `09012345678`／`''` |
@@ -115,12 +118,12 @@
 | note | TEXT | × | 1,000文字以内、既定 `''` | メモ（改行は LF） | `急ぎではないとのこと`／`''` |
 | status | TEXT | × | `open` / `done`、既定 `open` | 状態 | `open`（未対処）／`done`（対処済み） |
 | done_by | INTEGER | ○ | FK → users.id | 対処済みにした人 | 未対処なら `NULL`／対処済みなら `1` |
-| done_at | TEXT | ○ | | 対処済みにした日時 | 未対処なら `NULL`／`2026-11-05T07:10:00.000Z` |
+| done_at | TEXT | ○ | | 対処済みにした日時 | 未対処なら `NULL`／`2026-11-24T07:10:00.000Z` |
 | created_by | INTEGER | × | FK → users.id | 作成者（変えない） | `3` |
-| created_at | TEXT | × | | 作成日時（変えない。既定値なし：作成時にアプリが入れる） | `2026-11-05T05:32:41.123Z` |
+| created_at | TEXT | × | | 作成日時（変えない。既定値なし：作成時にアプリが入れる） | `2026-11-24T05:32:41.123Z` |
 | updated_by | INTEGER | × | FK → users.id | | `3` |
-| updated_at | TEXT | × | | | `2026-11-05T05:32:41.123Z` |
-| deleted_at | TEXT | ○ | | | `NULL`／`2026-11-06T00:00:00.000Z` |
+| updated_at | TEXT | × | | | `2026-11-24T05:32:41.123Z` |
+| deleted_at | TEXT | ○ | | | `NULL`／`2026-11-25T00:00:00.000Z` |
 
 - 受電日時は分単位（入力した値）なので秒以下が `00.000` になる。作成日時・更新日時などは保存した時刻なので、秒・ミリ秒まで入る
 
