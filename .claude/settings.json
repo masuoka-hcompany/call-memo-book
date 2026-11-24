@@ -10,6 +10,7 @@
       "Bash(*wrangler deploy*)",
       "Bash(*wrangler secret*)",
       "Bash(*wrangler* --remote*)",
+      "Edit(./migrations/APPLIED)",
       "Read(./.env)",
       "Read(./.dev.vars)"
     ]

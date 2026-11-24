@@ -21,7 +21,7 @@ AI エージェント（Claude Code、GitHub Copilot など）と人間の、共
 
 | コマンド | 内容 |
 |---|---|
-| `npm run check` | Lint → 型の生成物の確認 → 型チェック → テスト。**変更したら、これを通してから終える** |
+| `npm run check` | Lint → 型の生成物の確認 → マイグレーションの検査 → 型チェック → テスト。**変更したら、これを通してから終える** |
 | `npm run lint` / `npm run format` | Biome でチェック／自動修正 |
 | `npm run typecheck` | 型チェック（src・test・scripts） |
 | `npm test` | テスト（Vitest。Workers ランタイム上で動き、テスト用の D1 にマイグレーションが当たる） |
@@ -85,9 +85,11 @@ AI エージェント（Claude Code、GitHub Copilot など）と人間の、共
 - 部分一致は `LIKE` ではなく `instr(列, ?) > 0` で比べる
 - 削除されていない行だけを取るときは、SQL に `deleted_at IS NULL` をそのまま書く（部分インデックスを使わせるため）
 - DB の CHECK・外部キーは最後の守り。エラーメッセージを出す入力チェックは `src/domain/` で行う
-- **マイグレーション**
+- **マイグレーション**（決まりは `docs/migrations.md`。`npm run migrations:check` が確かめる）
   - 追加するときは `npx wrangler d1 migrations create DB <名前>` で `migrations/` にファイルを作る。番号は連番
-  - リモートに当てたマイグレーションは書き換えない。いま当たっているのは `0001` まで（`0002` はまだ当てていない）
+  - リモートに当てたマイグレーションは、書き換えない・消さない・名前を変えない。どこまで当てたかは `migrations/APPLIED` に書いてある。その番号より後のものは、書き換えてよい
+  - **`migrations/APPLIED` を書き換えない**（リモートに当てたあと、人間が更新する）
+  - 列・テーブルを足すときは、古いコードが壊れない形にする（NULL を許すか、DEFAULT を付ける）。消すときは、コードから使わなくする変更と、消すマイグレーションを、2 回に分ける
   - SQLite は CHECK 制約や列の型を `ALTER` で変えられない。変えるにはテーブルの作り直しが要り、D1 では `PRAGMA foreign_keys = OFF` が効かない（`PRAGMA defer_foreign_keys = on` を使う）。作り直しが必要になったら、手順を人間と決めてから書く
 
 ## フロント
@@ -106,5 +108,6 @@ AI エージェント（Claude Code、GitHub Copilot など）と人間の、共
 | `docs/db/` | DB 設計 |
 | `docs/design.md` | デザインのルール |
 | `docs/harness.md` | ハーネスの方針（実行場所、ルールファイル、チェック、今後の予定） |
+| `docs/migrations.md` | マイグレーションの決まり（追加のしかた、書き換えない範囲、壊さない変更の進め方） |
 | `docs/ac-coverage.md` | モックで受け入れ条件を確かめた結果 |
 | `README.md` | 環境の作り方、Cloudflare の設定、デプロイの手順（人間向け） |
