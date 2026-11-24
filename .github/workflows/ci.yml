@@ -19,5 +19,7 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run lint
+      # worker-configuration.d.ts が wrangler.jsonc と合っていること（合わないときは npm run types で作り直す）
+      - run: npm run types:check
       - run: npm run typecheck
       - run: npm test

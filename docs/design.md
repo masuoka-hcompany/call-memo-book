@@ -4,7 +4,7 @@
 
 - 実装：`src/styles/app.css`（テーマと部品のクラス）、`src/views/Document.tsx`（CSS・JS の読み込み）
 - 見本：`/__styleguide`（`MOCK_MODE=true` のときだけ。各部品の見た目はここと同じにする）
-- 文言は `docs/spec.md` のとおり（CLAUDE.md）。このファイルの文言の例も、仕様書にあるものだけを使っている
+- 文言は `docs/spec.md` のとおり（AGENTS.md）。このファイルの文言の例も、仕様書にあるものだけを使っている
 
 ## 1. 方針
 
@@ -65,7 +65,7 @@
 - 入力中：枠を黒にし、内側に 1px 足して 2px の単線に見せる（`box-shadow: inset`）。外側の二重線（daisyUI の outline）は出さない
 - S-01 の検索欄だけ `input-lg` で一回り大きくする。形と色はほかの入力欄と同じ
 - 検索欄（`type="search"`）の消去ボタン「×」は出さない。Chrome・Edge が青で表示し、パレットにない色になるため（`app.css` で消している）
-- 項目名は入力欄の上に置き、`<label>` で入力欄とつなぐ。項目名はエラーメッセージの {項目名} と同じ（CLAUDE.md）
+- 項目名は入力欄の上に置き、`<label>` で入力欄とつなぐ。項目名はエラーメッセージの {項目名} と同じ（AGENTS.md）
 - ブラウザの入力チェックは使わない（`<form novalidate>`。`required`・`maxlength`・`pattern` を付けない）
 
 ### 4.3 入力エラー

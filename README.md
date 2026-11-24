@@ -97,6 +97,7 @@ docker compose exec app npm run deploy
 ## 3. よく使うコマンド
 
 コンテナ内で実行する（`docker compose` 運用なら先頭に `docker compose exec app` を付ける）。
+コンテナの外から実行するときは `scripts/in-container.sh` を前に付けてもよい（例：`scripts/in-container.sh npm run check`）。
 
 | コマンド                   | 内容                                                                                  |
 | -------------------------- | ------------------------------------------------------------------------------------- |
@@ -106,8 +107,10 @@ docker compose exec app npm run deploy
 | `npm run db:seed:local`    | ローカル D1 に seed（`seed/seed.sql`）を投入する                                      |
 | `npm run deploy`           | リモート D1 にマイグレーションを適用し、`wrangler deploy` する                        |
 | `npm run destroy`          | 確認の後、自分の Worker と D1 を削除し、`wrangler.jsonc` をプレースホルダに戻す       |
+| `npm run check`            | Lint・型チェック・テストをまとめて実行する（PR の CI と同じ内容）                     |
 | `npm test`                 | テストを実行する（Workers ランタイム上で動く）                                        |
-| `npm run typecheck`        | 型を生成（`wrangler types`）してから型チェックする                                    |
+| `npm run typecheck`        | 型チェックする（src・test・scripts）                                                  |
+| `npm run types`            | `wrangler.jsonc` から型（`worker-configuration.d.ts`）を作り直す                      |
 | `npm run lint` / `format`  | Biome でチェック／自動修正する                                                        |
 
 マイグレーションを追加するときは `npx wrangler d1 migrations create DB <名前>` で `migrations/` にファイルを作る。ダッシュボードでスキーマを直接変更しないこと。
@@ -116,9 +119,12 @@ docker compose exec app npm run deploy
 
 ```text
 .
+├── AGENTS.md                AI エージェントと人間の共通のルール（CLAUDE.md はこれを読み込む）
+├── .claude/settings.json    Claude Code の設定（拒否するコマンド、編集後の整形）
 ├── .devcontainer/           VS Code Dev Containers の設定（compose.yaml を使う）
 ├── .github/workflows/       CI（PR 時の型チェック・テスト）とデプロイ（main への push 時）。勉強会では使わない
 ├── docs/
+│   ├── harness.md           ハーネス（AI 設定・テスト・型・Lint・マイグレーション）の方針
 │   ├── account-policy.md    Cloudflare アカウント運用方針
 │   └── cloudflare-setup.md  Cloudflare 側の設定手順（アカウント・Access・ログイン方法）
 ├── migrations/              D1 のマイグレーション（スキーマはここで管理する）
@@ -133,7 +139,7 @@ docker compose exec app npm run deploy
 ├── test/                    テスト（@cloudflare/vitest-plugin）
 ├── compose.yaml / Dockerfile ローカル開発用コンテナ
 ├── wrangler.jsonc           Wrangler 設定
-├── worker-configuration.d.ts `wrangler types` が生成する型（npm run typecheck で再生成される）
+├── worker-configuration.d.ts `wrangler types` が生成する型（wrangler.jsonc を変えたら npm run types で作り直す）
 ├── .env.example             Cloudflare の認証情報（コピーして .env を作る）
 └── .dev.vars.example        ローカル用の変数（コピーして .dev.vars を作る）
 ```
@@ -145,7 +151,9 @@ docker compose exec app npm run deploy
 | `ENVIRONMENT`        | `local`                    | `production`                             |
 | `ACCESS_TEAM_DOMAIN` | 不要                       | `<チーム名>.cloudflareaccess.com`        |
 | `ACCESS_AUD`         | 不要                       | Access アプリケーションの AUD タグ       |
-| `DEV_USER_EMAIL`     | ダミーユーザーのメール     | 設定しない                               |
+| `DEV_USER_EMAIL`     | ダミーユーザーのメール     | 空のまま（ローカル専用。使われない）     |
+
+`.dev.vars` から読まれるのは、`wrangler.jsonc` の `vars` に宣言したキーだけ（`"secrets": { "required": [] }` の指定による）。ローカル用の変数を増やすときは、`vars` にも宣言して `npm run types` を実行する。
 
 ### Access の検証
 

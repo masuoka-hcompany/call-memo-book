@@ -2,3 +2,11 @@
 services:
   app:
     command: ["sleep", "infinity"]
+    environment:
+      # Claude Code の設定とログイン情報を、下のボリュームに置く（コンテナを作り直しても残る）
+      CLAUDE_CONFIG_DIR: /home/node/.claude
+    volumes:
+      - claude_config:/home/node/.claude
+
+volumes:
+  claude_config:

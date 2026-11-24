@@ -29,10 +29,17 @@
     }
   ],
 
+  // 必須の secret はない。この指定があると、wrangler は .dev.vars のキーを型（wrangler types）に足さず、
+  // ローカルでも vars に宣言したキーだけを .dev.vars から読む。
+  // 手元の .dev.vars の中身で worker-configuration.d.ts が変わらないようにするための指定。
+  "secrets": { "required": [] },
+
   // デプロイ先の環境依存値。ローカルでは .dev.vars の値で上書きされる。
   // ACCESS_TEAM_DOMAIN / ACCESS_AUD が空のままだと、すべてのリクエストを拒否する（フェイルクローズ）。
+  // DEV_USER_EMAIL はローカル専用（ENVIRONMENT=local のときだけ使う）。.dev.vars で上書きできるように、空で宣言しておく。
   "vars": {
     "ENVIRONMENT": "production",
+    "DEV_USER_EMAIL": "",
     "ACCESS_TEAM_DOMAIN": "summer-block-0388.cloudflareaccess.com",
     "ACCESS_AUD": "467945e639d352f95a060052fc464d00b01c0c76586aab58cbd5e1d69ca2fd7e"
   }
