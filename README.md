@@ -119,9 +119,12 @@ docker compose exec app npm run deploy
 
 ```text
 .
+├── AGENTS.md                AI エージェントと人間の共通のルール（CLAUDE.md はこれを読み込む）
+├── .claude/settings.json    Claude Code の設定（拒否するコマンド、編集後の整形）
 ├── .devcontainer/           VS Code Dev Containers の設定（compose.yaml を使う）
 ├── .github/workflows/       CI（PR 時の型チェック・テスト）とデプロイ（main への push 時）。勉強会では使わない
 ├── docs/
+│   ├── harness.md           ハーネス（AI 設定・テスト・型・Lint・マイグレーション）の方針
 │   ├── account-policy.md    Cloudflare アカウント運用方針
 │   └── cloudflare-setup.md  Cloudflare 側の設定手順（アカウント・Access・ログイン方法）
 ├── migrations/              D1 のマイグレーション（スキーマはここで管理する）
@@ -148,7 +151,9 @@ docker compose exec app npm run deploy
 | `ENVIRONMENT`        | `local`                    | `production`                             |
 | `ACCESS_TEAM_DOMAIN` | 不要                       | `<チーム名>.cloudflareaccess.com`        |
 | `ACCESS_AUD`         | 不要                       | Access アプリケーションの AUD タグ       |
-| `DEV_USER_EMAIL`     | ダミーユーザーのメール     | 設定しない                               |
+| `DEV_USER_EMAIL`     | ダミーユーザーのメール     | 空のまま（ローカル専用。使われない）     |
+
+`.dev.vars` から読まれるのは、`wrangler.jsonc` の `vars` に宣言したキーだけ（`"secrets": { "required": [] }` の指定による）。ローカル用の変数を増やすときは、`vars` にも宣言して `npm run types` を実行する。
 
 ### Access の検証
 
