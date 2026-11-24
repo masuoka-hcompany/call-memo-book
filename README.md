@@ -109,7 +109,8 @@ docker compose exec app npm run deploy
 | `npm run destroy`          | 確認の後、自分の Worker と D1 を削除し、`wrangler.jsonc` をプレースホルダに戻す       |
 | `npm run check`            | Lint・型チェック・テストをまとめて実行する（PR の CI と同じ内容）                     |
 | `npm test`                 | テストを実行する（Workers ランタイム上で動く）                                        |
-| `npm run typecheck`        | 型を生成（`wrangler types`）してから型チェックする                                    |
+| `npm run typecheck`        | 型チェックする（src・test・scripts）                                                  |
+| `npm run types`            | `wrangler.jsonc` から型（`worker-configuration.d.ts`）を作り直す                      |
 | `npm run lint` / `format`  | Biome でチェック／自動修正する                                                        |
 
 マイグレーションを追加するときは `npx wrangler d1 migrations create DB <名前>` で `migrations/` にファイルを作る。ダッシュボードでスキーマを直接変更しないこと。
@@ -135,7 +136,7 @@ docker compose exec app npm run deploy
 ├── test/                    テスト（@cloudflare/vitest-plugin）
 ├── compose.yaml / Dockerfile ローカル開発用コンテナ
 ├── wrangler.jsonc           Wrangler 設定
-├── worker-configuration.d.ts `wrangler types` が生成する型（npm run typecheck で再生成される）
+├── worker-configuration.d.ts `wrangler types` が生成する型（wrangler.jsonc を変えたら npm run types で作り直す）
 ├── .env.example             Cloudflare の認証情報（コピーして .env を作る）
 └── .dev.vars.example        ローカル用の変数（コピーして .dev.vars を作る）
 ```

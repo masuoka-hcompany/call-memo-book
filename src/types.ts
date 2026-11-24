@@ -2,8 +2,7 @@
 
 export type AppEnv = {
   // wrangler.jsonc から渡される値（型は `wrangler types` が生成する Env）
-  // DEV_USER_EMAIL はローカル専用で .dev.vars にのみ書くため、ここで追加する
-  Bindings: Env & { DEV_USER_EMAIL?: string };
+  Bindings: Env;
   Variables: {
     // Access で認証されたユーザーのメールアドレス
     userEmail: string;
