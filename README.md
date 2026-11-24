@@ -97,6 +97,7 @@ docker compose exec app npm run deploy
 ## 3. よく使うコマンド
 
 コンテナ内で実行する（`docker compose` 運用なら先頭に `docker compose exec app` を付ける）。
+コンテナの外から実行するときは `scripts/in-container.sh` を前に付けてもよい（例：`scripts/in-container.sh npm run check`）。
 
 | コマンド                   | 内容                                                                                  |
 | -------------------------- | ------------------------------------------------------------------------------------- |
@@ -106,6 +107,7 @@ docker compose exec app npm run deploy
 | `npm run db:seed:local`    | ローカル D1 に seed（`seed/seed.sql`）を投入する                                      |
 | `npm run deploy`           | リモート D1 にマイグレーションを適用し、`wrangler deploy` する                        |
 | `npm run destroy`          | 確認の後、自分の Worker と D1 を削除し、`wrangler.jsonc` をプレースホルダに戻す       |
+| `npm run check`            | Lint・型チェック・テストをまとめて実行する（PR の CI と同じ内容）                     |
 | `npm test`                 | テストを実行する（Workers ランタイム上で動く）                                        |
 | `npm run typecheck`        | 型を生成（`wrangler types`）してから型チェックする                                    |
 | `npm run lint` / `format`  | Biome でチェック／自動修正する                                                        |
