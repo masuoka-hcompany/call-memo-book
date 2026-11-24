@@ -111,6 +111,7 @@ docker compose exec app npm run deploy
 | `npm test`                 | テストを実行する（Workers ランタイム上で動く）                                        |
 | `npm run typecheck`        | 型チェックする（src・test・scripts）                                                  |
 | `npm run types`            | `wrangler.jsonc` から型（`worker-configuration.d.ts`）を作り直す                      |
+| `npm run migrations:check` | マイグレーションの決まり（`docs/migrations.md`）を確かめる                            |
 | `npm run lint` / `format`  | Biome でチェック／自動修正する                                                        |
 
 マイグレーションを追加するときは `npx wrangler d1 migrations create DB <名前>` で `migrations/` にファイルを作る。ダッシュボードでスキーマを直接変更しないこと。
@@ -125,6 +126,7 @@ docker compose exec app npm run deploy
 ├── .github/workflows/       CI（PR 時の型チェック・テスト）とデプロイ（main への push 時）。勉強会では使わない
 ├── docs/
 │   ├── harness.md           ハーネス（AI 設定・テスト・型・Lint・マイグレーション）の方針
+│   ├── migrations.md        マイグレーションの決まり（追加のしかた、書き換えない範囲）
 │   ├── account-policy.md    Cloudflare アカウント運用方針
 │   └── cloudflare-setup.md  Cloudflare 側の設定手順（アカウント・Access・ログイン方法）
 ├── migrations/              D1 のマイグレーション（スキーマはここで管理する）

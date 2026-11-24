@@ -18,7 +18,7 @@ AI エージェントと人間が、同じ手順で安全に開発するため�
 | 型の生成 | `worker-configuration.d.ts` は追跡し、CI で `wrangler types --check` をかける。型チェックでは作り直さない | 以前は `npm run typecheck` が毎回作り直し、手元の `.dev.vars` の中身で生成結果が変わっていた。`wrangler.jsonc` の `"secrets": { "required": [] }` で、`.dev.vars` の影響をなくした |
 | Lint／Format | Biome だけを続ける。コミット前のフックは入れず、Claude Code の編集後のフックと CI で守る | コミット前のフックは、`node_modules` のないホスト側で動かない。SQL・Markdown の整形ツールは入れない |
 | DB へのアクセス | 素の SQL ＋手書きの型。ORM（Drizzle・Prisma）は入れない。次点は Kysely（クエリだけ） | `docs/db/queries.md` に SQL がそろっている。このスキーマ（`COLLATE NOCASE`、式を使う CHECK、降順の部分インデックス）は、ORM のマイグレーション生成では表しきれず、生成物を手で直すことになる |
-| マイグレーション | 適用は `wrangler d1 migrations apply` のまま。書き換えと番号の重なりを CI で見つける（予定） | リモートに当てたものは書き換えない。いま当たっているのは `0001` まで。`0002` は、当てる前に DB アクセスの試作でスキーマを固める |
+| マイグレーション | 適用は `wrangler d1 migrations apply` のまま。書き換えと番号の重なりを CI で見つける | 決まりは `docs/migrations.md`。リモートに当てたものは書き換えない。どこまで当てたかは `migrations/APPLIED`（いまは `0001`）。`0002` は、当てる前に DB アクセスの試作でスキーマを固める |
 | フロントのビルド | Tailwind ＋ daisyUI だけを CLI でビルドする。JS はバンドルしない。クライアントの動きは Alpine.js（予定） | `@tailwindcss/browser`（ブラウザ上で CSS を作る方式）は本番向けではない。hono/jsx/dom はクライアント用のバンドルが要るので使わない |
 | E2E | Playwright で主要な流れを数本。htmx・Alpine を使う最初の画面のあとに入れる（予定） | いまのテストは HTML の文字列までしか見られない。認証は、すでにあるローカル用の分岐（`ENVIRONMENT=local` かつ localhost）を使う |
 | モック | 捨てる。Worker 名は変えず、本実装のデプロイでモックを上書きする | モック（`mock/step1`）の共通のルール・domain・テストは、必要なものだけ本実装に移す |
@@ -29,6 +29,8 @@ AI エージェントと人間が、同じ手順で安全に開発するため�
 |---|---|---|
 | Lint・型・テストが通ること | `npm run check`、PR の CI | `package.json`、`.github/workflows/ci.yml` |
 | 生成した型が `wrangler.jsonc` と合っていること | `npm run types:check`（CI と `npm run check` で実行） | 同上 |
+| リモートに当てたマイグレーションを書き換えないこと、番号が重ならないこと | `npm run migrations:check`（CI と `npm run check` で実行） | `scripts/check-migrations.ts`、`scripts/migrations-rules.ts` |
+| `migrations/APPLIED` を人間だけが更新すること | Claude Code の deny（`Edit`）。ほかは `AGENTS.md` のルールと、PR のレビュー | `.claude/settings.json` |
 | 整形と Lint の自動修正 | Claude Code の編集後のフック（コンテナの中で動かしているときだけ） | `.claude/settings.json`、`scripts/format-edited.ts` |
 | デプロイ・リモートの操作をしない | Claude Code の deny。ほかのエージェントは `AGENTS.md` のルールだけ | `.claude/settings.json` |
 | `.env`・`.dev.vars` を読まない | Claude Code の deny（`Read`）。シェルの `cat` などには効かない | 同上 |
@@ -41,8 +43,8 @@ AI エージェントと人間が、同じ手順で安全に開発するため�
 | PR | 中身 | 状態 |
 |---|---|---|
 | ① main の後始末 | `ACCESS_AUD` を、作り直した Access アプリの値に更新 | マージ済み |
-| ② AI 設定と実行の入口 | `npm run check`、`scripts/in-container.sh`、型の生成の整理、`AGENTS.md`・`CLAUDE.md`・`.claude/settings.json`、Dev Container への Claude Code の追加、このファイル | この PR |
-| ③ マイグレーションの検査 | 書き換え・番号の重なりを見つけるスクリプト、適用済みの境界（`migrations/APPLIED`）、`docs/migrations.md`（列を消す変更は 2 段階、シードの分け方） | これから |
+| ② AI 設定と実行の入口 | `npm run check`、`scripts/in-container.sh`、型の生成の整理、`AGENTS.md`・`CLAUDE.md`・`.claude/settings.json`、Dev Container への Claude Code の追加、このファイル | PR #5 |
+| ③ マイグレーションの検査 | 書き換え・番号の重なりを見つけるスクリプト、適用済みの境界（`migrations/APPLIED`）、`docs/migrations.md`（列を消す変更は 2 段階、シードの分け方） | この PR |
 | ④ DB アクセスの試作 | 行の型、`batch` のヘルパー、DB の列と型を突き合わせるテスト。必要なら `0002` を直す | これから |
 
 ④ のあと、人間が `0002` をリモートに当てる。そのあとは画面の実装と一緒に進める：CSS のビルド → htmx・Alpine と最初の画面 → E2E → `src/domain/` のカバレッジ、依存の更新（Dependabot）。

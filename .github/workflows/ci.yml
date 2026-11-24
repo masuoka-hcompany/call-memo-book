@@ -13,6 +13,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
+        with:
+          # マイグレーションの検査で、マージ先のブランチと比べるため、履歴を取得する
+          fetch-depth: 0
       - uses: actions/setup-node@v7
         with:
           node-version: 24
@@ -21,5 +24,10 @@ jobs:
       - run: npm run lint
       # worker-configuration.d.ts が wrangler.jsonc と合っていること（合わないときは npm run types で作り直す）
       - run: npm run types:check
+      # リモートに当てたマイグレーションを書き換えていないこと、番号が重なっていないこと（docs/migrations.md）
+      - run: npm run migrations:check
+        env:
+          # PR ではマージ先のブランチと比べる。main への push（Deploy から呼ばれたとき）は origin/main
+          MIGRATIONS_BASE: ${{ github.base_ref && format('origin/{0}', github.base_ref) || 'origin/main' }}
       - run: npm run typecheck
       - run: npm test
