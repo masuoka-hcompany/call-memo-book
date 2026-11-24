@@ -10,8 +10,9 @@ ENV WRANGLER_SEND_METRICS=false \
 
 # 名前付きボリュームをマウントする場所を node ユーザー所有で作っておく
 # （ボリュームの初回作成時に所有者が引き継がれる）
-RUN mkdir -p /app/node_modules /app/.wrangler /home/node/.config/.wrangler \
-  && chown -R node:node /app /home/node/.config
+# /home/node/.claude は、Dev Container で Claude Code の設定とログイン情報を置くボリューム用
+RUN mkdir -p /app/node_modules /app/.wrangler /home/node/.config/.wrangler /home/node/.claude \
+  && chown -R node:node /app /home/node/.config /home/node/.claude
 
 USER node
 WORKDIR /app

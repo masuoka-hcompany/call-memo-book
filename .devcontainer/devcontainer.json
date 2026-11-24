@@ -12,7 +12,8 @@
   },
   "customizations": {
     "vscode": {
-      "extensions": ["biomejs.biome"],
+      // Claude Code は、コンテナの中で動かす（node_modules がコンテナの中にしかないため）。ログインは初回だけ必要
+      "extensions": ["biomejs.biome", "anthropic.claude-code"],
       "settings": {
         "editor.defaultFormatter": "biomejs.biome",
         "editor.formatOnSave": true,
