@@ -17,7 +17,7 @@ AI エージェントと人間が、同じ手順で安全に開発するため�
 | 仕組みで守る範囲 | Claude Code の権限設定（`.claude/settings.json` の deny）と、テスト・CI で守る | 勉強会の手順（各自がコンテナの中で `npm run setup`・`npm run deploy` を実行する）は変えないので、Cloudflare のトークンはコンテナに残る。**deny は事故を減らす補助**で、Claude Code 以外には効かず、`sh -c` で包んだコマンドにも効かない |
 | 型の生成 | `worker-configuration.d.ts` は追跡し、CI で `wrangler types --check` をかける。型チェックでは作り直さない | 以前は `npm run typecheck` が毎回作り直し、手元の `.dev.vars` の中身で生成結果が変わっていた。`wrangler.jsonc` の `"secrets": { "required": [] }` で、`.dev.vars` の影響をなくした |
 | Lint／Format | Biome だけを続ける。コミット前のフックは入れず、Claude Code の編集後のフックと CI で守る | コミット前のフックは、`node_modules` のないホスト側で動かない。SQL・Markdown の整形ツールは入れない |
-| DB へのアクセス | 素の SQL ＋手書きの型。ORM（Drizzle・Prisma）は入れない。次点は Kysely（クエリだけ） | `docs/db/queries.md` に SQL がそろっている。このスキーマ（`COLLATE NOCASE`、式を使う CHECK、降順の部分インデックス）は、ORM のマイグレーション生成では表しきれず、生成物を手で直すことになる |
+| DB へのアクセス | 素の SQL ＋手書きの型。ORM（Drizzle・Prisma）は入れない。次点は Kysely（クエリだけ） | 型は `src/repo/schema.ts` の 1 か所に書き、DB と合っていることをテストで確かめる（`test/db/schema.test.ts`）。repo の関数は、テスト用の D1 で実際に動かしてテストする。`docs/db/queries.md` に SQL がそろっている。このスキーマ（`COLLATE NOCASE`、式を使う CHECK、降順の部分インデックス）は、ORM のマイグレーション生成では表しきれず、生成物を手で直すことになる |
 | マイグレーション | 適用は `wrangler d1 migrations apply` のまま。書き換えと番号の重なりを CI で見つける | 決まりは `docs/migrations.md`。リモートに当てたものは書き換えない。どこまで当てたかは `migrations/APPLIED`（いまは `0001`）。`0002` は、当てる前に DB アクセスの試作でスキーマを固める |
 | フロントのビルド | Tailwind ＋ daisyUI だけを CLI でビルドする。JS はバンドルしない。クライアントの動きは Alpine.js（予定） | `@tailwindcss/browser`（ブラウザ上で CSS を作る方式）は本番向けではない。hono/jsx/dom はクライアント用のバンドルが要るので使わない |
 | E2E | Playwright で主要な流れを数本。htmx・Alpine を使う最初の画面のあとに入れる（予定） | いまのテストは HTML の文字列までしか見られない。認証は、すでにあるローカル用の分岐（`ENVIRONMENT=local` かつ localhost）を使う |
@@ -31,6 +31,9 @@ AI エージェントと人間が、同じ手順で安全に開発するため�
 | 生成した型が `wrangler.jsonc` と合っていること | `npm run types:check`（CI と `npm run check` で実行） | 同上 |
 | リモートに当てたマイグレーションを書き換えないこと、番号が重ならないこと | `npm run migrations:check`（CI と `npm run check` で実行） | `scripts/check-migrations.ts`、`scripts/migrations-rules.ts` |
 | `migrations/APPLIED` を人間だけが更新すること | Claude Code の deny（`Edit`）。ほかは `AGENTS.md` のルールと、PR のレビュー | `.claude/settings.json` |
+| 行の型（`src/repo/schema.ts`）が DB と合っていること | 列の名前・順番・型・NULL を許すか・区分の値を、マイグレーションを当てた DB と突き合わせるテスト | `test/db/schema.test.ts` |
+| DB の制約が、決まりに合わない値を弾くこと | 制約ごとのテスト（日時の形、文字数、電話番号、取次メモの決まり、外部キー） | `test/db/constraints.test.ts` |
+| 設計が前提にしている D1 の動き | `batch` の取り消し、UPSERT、一覧の実行計画（部分インデックスを使い、並べ替えをしない） | `test/db/d1.test.ts` |
 | 整形と Lint の自動修正 | Claude Code の編集後のフック（コンテナの中で動かしているときだけ） | `.claude/settings.json`、`scripts/format-edited.ts` |
 | デプロイ・リモートの操作をしない | Claude Code の deny。ほかのエージェントは `AGENTS.md` のルールだけ | `.claude/settings.json` |
 | `.env`・`.dev.vars` を読まない | Claude Code の deny（`Read`）。シェルの `cat` などには効かない | 同上 |
@@ -44,8 +47,8 @@ AI エージェントと人間が、同じ手順で安全に開発するため�
 |---|---|---|
 | ① main の後始末 | `ACCESS_AUD` を、作り直した Access アプリの値に更新 | マージ済み |
 | ② AI 設定と実行の入口 | `npm run check`、`scripts/in-container.sh`、型の生成の整理、`AGENTS.md`・`CLAUDE.md`・`.claude/settings.json`、Dev Container への Claude Code の追加、このファイル | PR #5 |
-| ③ マイグレーションの検査 | 書き換え・番号の重なりを見つけるスクリプト、適用済みの境界（`migrations/APPLIED`）、`docs/migrations.md`（列を消す変更は 2 段階、シードの分け方） | この PR |
-| ④ DB アクセスの試作 | 行の型、`batch` のヘルパー、DB の列と型を突き合わせるテスト。必要なら `0002` を直す | これから |
+| ③ マイグレーションの検査 | 書き換え・番号の重なりを見つけるスクリプト、適用済みの境界（`migrations/APPLIED`）、`docs/migrations.md`（列を消す変更は 2 段階、シードの分け方） | PR #6 |
+| ④ DB アクセスの試作 | 行の型（`src/repo/schema.ts`）、会社・担当者・利用者の repo、DB の列と型を突き合わせるテスト、制約と D1 の動きのテスト。`0002` は直さずに済んだ | この PR |
 
 ④ のあと、人間が `0002` をリモートに当てる。そのあとは画面の実装と一緒に進める：CSS のビルド → htmx・Alpine と最初の画面 → E2E → `src/domain/` のカバレッジ、依存の更新（Dependabot）。
 
@@ -56,7 +59,8 @@ AI エージェントと人間が、同じ手順で安全に開発するため�
 - [ ] Dev Container の中で Claude Code の拡張機能が動き、作り直してもログインが残るか
 - [ ] Copilot が `AGENTS.md` を読むか（`AGENTS.md` にだけ書いた決まりを質問して確かめる）
 - [x] `"secrets": { "required": [] }` を入れても、ローカルの認証のスキップと `DEV_USER_EMAIL` が動くか → `DEV_USER_EMAIL` を `vars` に宣言すれば動く（2026-11-24 に確認）
-- [ ] DB（`0002` を当てる前）：`batch` の 2 つ目の文が失敗したとき 1 つ目も戻るか、UPSERT で `created_at` が変わらないか、一覧が部分インデックスを使うか（`EXPLAIN QUERY PLAN`）、CHECK 違反のときのエラーの形
+- [x] DB（`0002` を当てる前）：`batch` の 2 つ目の文が失敗したとき 1 つ目も戻るか、UPSERT で `created_at` が変わらないか、一覧が部分インデックスを使うか（`EXPLAIN QUERY PLAN`）、CHECK 違反のときのエラーの形 → すべて設計どおり。テストにして残した（`test/db/`。2026-11-24 に確認。ローカルの D1 での結果で、リモートでは確かめていない）
+  - CHECK 違反のエラーは `CHECK constraint failed: …`、外部キーは `FOREIGN KEY constraint failed`、一意は `UNIQUE constraint failed: users.email` の形のメッセージで、例外として投げられる
 - [ ] daisyUI をビルドに変えても、`app.css` の上書きが優先されるか（`docs/design.md` 6章は、CDN 版が `@layer` の中にあることを前提にしている）
 - [ ] htmx は 2 か 4 か：最初の画面で、GET・POST・入力エラーの表示・Alpine との併用を試す
 

@@ -40,7 +40,7 @@ AI エージェント（Claude Code、GitHub Copilot など）と人間の、共
 
 ## コードの置き場所
 
-本実装で、次の形にする（`src/repo/`・`src/domain/` はまだない）。
+本実装で、次の形にする（`src/repo/` は会社・担当者・利用者の分だけある。`src/routes/`・`src/views/` はテンプレートのまま）。
 
 | 場所 | 中身 |
 |---|---|
@@ -48,7 +48,8 @@ AI エージェント（Claude Code、GitHub Copilot など）と人間の、共
 | `src/views/` | 画面（Hono JSX）。画面では計算しない |
 | `src/views/labels.ts` | 仕様書にない汎用の文言（「検索」「キャンセル」「戻る」など）。全画面で同じ語にそろえるため、ここにまとめる |
 | `src/domain/` | 入力チェック、取次可否の優先ルール、文字数の数え方、日時の変換。DB に触らない。**単体テスト（`test/domain/`）を必ず付ける** |
-| `src/repo/` | データアクセス（D1）。SQL はここにだけ書く。削除済みの行は既定で除外し、削除済みも含めて取る関数は名前で区別する |
+| `src/repo/` | データアクセス（D1）。SQL はここにだけ書く。削除済みの行は既定で除外し、削除済みも含めて取る関数は名前で区別する。**テスト（`test/repo/`）を必ず付ける** |
+| `src/repo/schema.ts` | テーブルの列と型。行の型（`CompanyRow` など）はここから作る |
 | `src/middleware/access.ts` | Cloudflare Access の認証 |
 | `migrations/` | D1 のマイグレーション |
 | `test/` | テスト |
@@ -81,6 +82,10 @@ AI エージェント（Claude Code、GitHub Copilot など）と人間の、共
 設計は `docs/db/`（方針は `README.md`、列と制約は `tables.md`、画面ごとの SQL は `queries.md`）。
 
 - **素の SQL を書く。** ORM・クエリビルダーは使わない。SQL は `docs/db/queries.md` のものを使い、変えるときは設計書も直す
+- **SQL の結果の型は、`src/repo/schema.ts` の行の型から作る**（`Pick<CompanyRow, "id" | "name">` など）。`.first<T>()`・`.all<T>()` の `T` は実行時には確かめられないので、自分で列の型を書かない。`.first<T>()`・`.all<T>()` は `src/repo/` の中でだけ使う
+  - マイグレーションで列を変えたら、`src/repo/schema.ts` も直す（直し忘れると `test/db/schema.test.ts` が落ちる）
+- **repo の関数は、テスト用の D1 で実際に動かすテストを書く**（`test/repo/`）。型だけでは SQL の誤りを見つけられない。テスト用のデータは `test/fixtures.ts` の関数で、テストごとに作る
+- repo の関数は、行をそのまま返す（列の名前は DB と同じ snake_case）。現在時刻は引数で受け取り（`now: Date`）、1 つの処理の中では同じ値を使う
 - 複数の文をまとめて反映するときは `db.batch([...])` を使う（D1 には `BEGIN`〜`COMMIT` のトランザクションがない）
 - 部分一致は `LIKE` ではなく `instr(列, ?) > 0` で比べる
 - 削除されていない行だけを取るときは、SQL に `deleted_at IS NULL` をそのまま書く（部分インデックスを使わせるため）
